@@ -53,7 +53,7 @@ class MainAccessibilityService : AccessibilityService() {
         if (event == null) {
             return
         }
-
+        
         if (event.source == null) {
             //Log.i("SUBSOVERLAY", "source null")
             return

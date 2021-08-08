@@ -8,22 +8,22 @@ class Utils {
     companion object {
         @JvmStatic
         fun printAllViews(nodeInfo: AccessibilityNodeInfo?) {
-            var debugDepth = 0
-            val nodeQueue: Queue<AccessibilityNodeInfo?> = LinkedList(listOf(nodeInfo))
+            val nodeQueue: Queue<Pair<AccessibilityNodeInfo?, Int>> = LinkedList(listOf(Pair(nodeInfo, 0)))
             while (nodeQueue.isNotEmpty()) {
-                val node = nodeQueue.poll() ?: continue
+                val (node, debugDepth) = nodeQueue.poll() ?: continue
+                node ?: continue
 
                 var log = ""
                 for (i in 0 until debugDepth) {
                     log += "."
                 }
+                // Range info works for seek bar
                 log += "(${node.text} <-- ${node.viewIdResourceName}) ${node.rangeInfo ?: "no range"}"
                 Log.d("SUBSOVERLAY", log)
-                debugDepth++
+
                 for (i in 0 until node.childCount) {
-                    nodeQueue.add(node.getChild(i))
+                    nodeQueue.add(Pair(node.getChild(i), debugDepth + 1))
                 }
-                debugDepth--
             }
         }
     }
