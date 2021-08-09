@@ -30,15 +30,14 @@ class NetflixParser : IDataParser {
         if (node == null)
             return
 
-        val episodeNode = node.findAccessibilityNodeInfosByViewId("com.netflix.mediaclient:id/player_title_label")
-        val timeRemainingNode = node.findAccessibilityNodeInfosByViewId("com.netflix.mediaclient:id/label_time_remaining")
+        val episodeNodes = node.findAccessibilityNodeInfosByViewId("com.netflix.mediaclient:id/player_title_label")
+        val timeRemainingNodes = node.findAccessibilityNodeInfosByViewId("com.netflix.mediaclient:id/label_time_remaining")
 
-        for (n in episodeNode) {
+        for (n in episodeNodes) {
             if (n.text.isNotBlank()) {
                 episodeName = n.text.toString()
             }
         }
-
 
         var rangeInfo: AccessibilityNodeInfo.RangeInfo? = null
         if (totalLength == null) {
@@ -48,22 +47,47 @@ class NetflixParser : IDataParser {
                     rangeInfo = n.rangeInfo
                 }
             }
+
+            if (rangeInfo != null) {
+                val secondsLeft = getSecondsLeft(timeRemainingNodes)
+                if (secondsLeft != null) {
+                    val normalizedCur = getNormalizedRangeCurrent(rangeInfo)
+                    totalLength = ((secondsLeft * normalizedCur / (1 - normalizedCur)) + secondsLeft).toInt()
+                }
+            }
         }
 
         if (totalLength != null) {
-            for (n in timeRemainingNode) {
-                if (n != null && n.text != null) {
-                    val match = timeRegex.matchEntire(n.text)
-                    if (match != null) {
-                        val values = match.groups.filterNotNull()
-                        val secondsLeft = values.slice(IntRange(1, values.size - 1)).map { it.value.toInt() }
-                                .reduceRightIndexed { i, v, a ->
-                                    // accumulated + value * 60s ^ index -> seconds left
-                                    a + (v * (60.0.pow((values.size - i).toDouble()))).toInt()
-                                }
-                        secondsSinceStart = totalLength!! - secondsLeft
-                    }
+            val secondsLeft = getSecondsLeft(timeRemainingNodes)
+            if (secondsLeft != null) {
+                secondsSinceStart = totalLength!! - secondsLeft
+            }
+        }
+    }
+
+    private fun getSecondsLeft(nodes: List<AccessibilityNodeInfo?>): Int? {
+        for (n in nodes) {
+            if (n != null && n.text != null) {
+                val match = timeRegex.matchEntire(n.text)
+                if (match != null) {
+                    val values = match.groups.filterNotNull()
+                    return values.slice(IntRange(1, values.size - 1)).map { it.value.toInt() }
+                            .reduceRightIndexed { i, v, a ->
+                                // accumulated + value * 60s ^ index -> seconds left
+                                a + (v * (60.0.pow((values.size - i).toDouble()))).toInt()
+                            }
                 }
+            }
+        }
+
+        return null
+    }
+
+    private fun getNormalizedRangeCurrent(rangeInfo: AccessibilityNodeInfo.RangeInfo): Float {
+        return when (rangeInfo.type) {
+            AccessibilityNodeInfo.RangeInfo.RANGE_TYPE_PERCENT -> rangeInfo.current / 100.0F
+            else -> {
+                rangeInfo.current / (rangeInfo.max - rangeInfo.min)
             }
         }
     }
