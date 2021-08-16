@@ -1,4 +1,4 @@
-package com.lazykernel.subsoverlay.service.parsing
+package com.lazykernel.subsoverlay.service.source
 
 import android.view.accessibility.AccessibilityNodeInfo
 import kotlin.math.pow

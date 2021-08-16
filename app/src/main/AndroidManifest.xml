@@ -23,7 +23,7 @@
         </activity>
 
         <activity android:name=".application.DummyActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar.Fullscreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.GET_CONTENT" />
