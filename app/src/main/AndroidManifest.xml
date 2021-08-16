@@ -22,6 +22,18 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".application.DummyActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.GET_CONTENT" />
+                <data android:scheme="file" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.srt" />
+                <data android:host="*" />
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".service.MainAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

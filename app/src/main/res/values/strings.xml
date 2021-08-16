@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">SubsOverlay</string>
+    <string name="select_sub_file">Select subtitle file</string>
+    <string name="label_sub_offset">Subtitle offset (ms)</string>
+    <string name="label_no_sub_file_selected">No file selected</string>
+    <string name="label_close">Close</string>
 </resources>

@@ -1,6 +1,8 @@
 package com.lazykernel.subsoverlay.service
 
+import android.content.res.Resources
 import android.util.Log
+import android.util.TypedValue
 import android.view.accessibility.AccessibilityNodeInfo
 import java.util.*
 
@@ -25,6 +27,13 @@ class Utils {
                     nodeQueue.add(Pair(node.getChild(i), debugDepth + 1))
                 }
             }
+        }
+
+        fun dpToPixels(dp: Float): Float {
+            return TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, dp,
+                Resources.getSystem().displayMetrics
+            )
         }
     }
 }
