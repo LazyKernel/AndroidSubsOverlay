@@ -18,6 +18,7 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.application.DummyActivity
+import com.lazykernel.subsoverlay.service.subtitle.SubtitleManager
 
 
 class MainAccessibilityService : AccessibilityService() {
@@ -50,7 +51,8 @@ class MainAccessibilityService : AccessibilityService() {
             Log.e("SUBSOVERLAY", "adding settings icon view failed", ex)
         }
 
-        val (subsLayout, subsLayoutParams) = buildSubsView()
+        val subManager = SubtitleManager(applicationContext)
+        val (subsLayout, subsLayoutParams) = subManager.buildSubtitleView()
 
         try {
             windowManager.addView(subsLayout, subsLayoutParams)
