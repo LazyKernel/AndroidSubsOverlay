@@ -51,18 +51,9 @@ class MainAccessibilityService : AccessibilityService() {
             Log.e("SUBSOVERLAY", "adding settings icon view failed", ex)
         }
 
-        val subManager = SubtitleManager(applicationContext)
-        val (subsLayout, subsLayoutParams) = subManager.buildSubtitleView()
-
-        try {
-            windowManager.addView(subsLayout, subsLayoutParams)
-        }
-        catch (ex: Exception) {
-            Log.e("SUBSOVERLAY", "adding subs view failed", ex)
-        }
+        val subManager = SubtitleManager(applicationContext, windowManager)
+        subManager.buildSubtitleView()
     }
-
-
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         //Log.i("SUBSOVERLAY", "accessibility event $event")
@@ -104,37 +95,6 @@ class MainAccessibilityService : AccessibilityService() {
                 mSettingsModalOpen = true
                 openSettingsModal()
             }
-            true
-        }
-
-        return Pair(layout, layoutParams)
-    }
-
-    fun buildSubsView(): Pair<LinearLayout, LayoutParams> {
-        val layout = LinearLayout(applicationContext)
-        val textView = TextView(applicationContext)
-        textView.apply {
-            id = R.id.subsTextView
-        }
-        layout.addView(textView)
-
-        val layoutParams = LayoutParams()
-        layoutParams.apply {
-            y = 200
-            width = 600
-            height = 300
-            type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
-            gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
-            format = PixelFormat.TRANSPARENT
-            flags = LayoutParams.FLAG_NOT_FOCUSABLE
-        }
-
-        layout.apply {
-            setBackgroundColor(0x88000000.toInt())
-        }
-
-        layout.setOnTouchListener { view, event ->
-            Log.i("SUBSOVERLAY", "subs event $event")
             true
         }
 

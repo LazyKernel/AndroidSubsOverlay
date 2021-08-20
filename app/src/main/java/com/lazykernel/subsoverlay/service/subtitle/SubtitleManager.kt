@@ -1,5 +1,6 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
+import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -8,27 +9,30 @@ import android.text.SpannableString
 import android.text.SpannedString
 import android.text.style.BackgroundColorSpan
 import android.util.Log
-import android.view.Gravity
-import android.view.MotionEvent
-import android.view.View
-import android.view.WindowManager
+import android.view.*
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.view.WindowManager.LayoutParams
+import android.widget.Button
+import android.widget.ImageButton
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.text.clearSpans
 import com.atilika.kuromoji.ipadic.Tokenizer
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.service.Utils
 
-class SubtitleManager(private val applicationContext: Context) {
+class SubtitleManager(private val applicationContext: Context, private val windowManager: WindowManager) {
     var currentTimeInSeconds: Double = 0.0
     lateinit var subtitleLayout: LinearLayout
     val tokenizer = Tokenizer()
+    lateinit var mSubtitleTextView: TextView
+    lateinit var mSpanRange: IntRange
 
-    fun buildSubtitleView(): Pair<LinearLayout, LayoutParams>  {
+    fun buildSubtitleView()  {
         subtitleLayout = LinearLayout(applicationContext)
-        val textView = TextView(applicationContext)
-        textView.apply {
+        mSubtitleTextView = TextView(applicationContext)
+        mSubtitleTextView.apply {
             id = R.id.subsTextView
             text = SpannedString("何できるのかな～何できるのかな～何できるのかな～何できるのかな～何できるのかな～何できるのかな～何できるのかな～")
             textSize = 20F
@@ -36,9 +40,9 @@ class SubtitleManager(private val applicationContext: Context) {
             setBackgroundColor(0xAA000000.toInt())
             gravity = Gravity.CENTER_HORIZONTAL
         }
-        subtitleLayout.addView(textView)
+        subtitleLayout.addView(mSubtitleTextView)
 
-        val layoutParams = WindowManager.LayoutParams()
+        val layoutParams = LayoutParams()
         layoutParams.apply {
             y = Utils.dpToPixels(50F).toInt()
             height = LayoutParams.WRAP_CONTENT
@@ -49,26 +53,24 @@ class SubtitleManager(private val applicationContext: Context) {
             flags = LayoutParams.FLAG_NOT_FOCUSABLE
         }
 
-        textView.setOnTouchListener { view, event ->
+        mSubtitleTextView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP) {
-                (view as TextView)
-                val (word, spanRange) = getWordFromTouchEvent(view, event)
+                val (word, spanRange) = getWordFromTouchEvent(mSubtitleTextView, event)
                 Log.i("SUBSOVERLAY", "word: $word span: $spanRange")
                 if (word != null && spanRange != null) {
-                    val spannableString = SpannableString(view.text)
-                    spannableString.clearSpans()
-                    spannableString.setSpan(
-                        BackgroundColorSpan(Color.DKGRAY),
-                        spanRange.start, spanRange.last,
-                        Spannable.SPAN_INCLUSIVE_EXCLUSIVE
-                    )
-                    view.text = spannableString
+                    setTextSpan(word, spanRange)
+                    openSubtitleAdjustWindow(event.rawX.toInt(), event.rawY.toInt())
                 }
             }
             true
         }
 
-        return Pair(subtitleLayout, layoutParams)
+        try {
+            windowManager.addView(subtitleLayout, layoutParams)
+        }
+        catch (ex: Exception) {
+            Log.e("SUBSOVERLAY", "adding subs view failed", ex)
+        }
     }
 
     fun getWordFromTouchEvent(view: View, event: MotionEvent): Pair<String?, IntRange?> {
@@ -107,5 +109,107 @@ class SubtitleManager(private val applicationContext: Context) {
         }
 
         return Pair(null, null)
+    }
+
+    fun openSubtitleAdjustWindow(xPos: Int, yPos: Int) {
+        val subtitleAdjustLayout = View.inflate(applicationContext, R.layout.subtitle_adjust, null) as ConstraintLayout
+        subtitleAdjustLayout.apply {
+            setBackgroundColor(Color.WHITE)
+        }
+
+        val layoutParams = LayoutParams()
+
+        val coords = IntArray(2)
+        mSubtitleTextView.getLocationOnScreen(coords)
+
+        layoutParams.apply {
+            y = coords[1] - Utils.dpToPixels(50F).toInt()
+            width = Utils.dpToPixels(300F).toInt()
+            height = Utils.dpToPixels(50F).toInt()
+            type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
+            format = PixelFormat.TRANSPARENT
+            gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
+            flags = LayoutParams.FLAG_NOT_FOCUSABLE
+        }
+
+        subtitleAdjustLayout.findViewById<ImageButton>(R.id.subtitle_select_left).setOnTouchListener{ _, event ->
+            if (event.action == KeyEvent.ACTION_UP) {
+                if (mSpanRange.first <= 0) {
+                    return@setOnTouchListener true
+                }
+
+                val newSpan = IntRange(mSpanRange.first - 1, mSpanRange.last - 1)
+                val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
+                Log.i("SUBSOVERLAY", "word is $word")
+                setTextSpan((word as SpannedString).toString(), newSpan)
+            }
+            true
+        }
+
+        subtitleAdjustLayout.findViewById<ImageButton>(R.id.subtitle_select_right).setOnTouchListener{ _, event ->
+            if (event.action == KeyEvent.ACTION_UP) {
+                if (mSpanRange.last >= mSubtitleTextView.text.length) {
+                    return@setOnTouchListener true
+                }
+
+                val newSpan = IntRange(mSpanRange.first + 1, mSpanRange.last + 1)
+                val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
+                Log.i("SUBSOVERLAY", "word is $word")
+                setTextSpan((word as SpannedString).toString(), newSpan)
+            }
+            true
+        }
+
+        subtitleAdjustLayout.findViewById<Button>(R.id.subtitle_select_more).setOnTouchListener{ _, event ->
+            if (event.action == KeyEvent.ACTION_UP) {
+                var newSpan: IntRange = when {
+                    mSpanRange.last < mSubtitleTextView.text.length -> {
+                        IntRange(mSpanRange.first, mSpanRange.last + 1)
+                    }
+                    mSpanRange.first > 0 -> {
+                        IntRange(mSpanRange.first - 1, mSpanRange.last)
+                    }
+                    else -> {
+                        return@setOnTouchListener true
+                    }
+                }
+
+                val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
+                Log.i("SUBSOVERLAY", "word is $word")
+                setTextSpan((word as SpannedString).toString(), newSpan)
+            }
+            true
+        }
+
+        subtitleAdjustLayout.findViewById<Button>(R.id.subtitle_select_less).setOnTouchListener{ _, event ->
+            if (event.action == KeyEvent.ACTION_UP) {
+                if (mSpanRange.last - mSpanRange.first > 1) {
+                    val newSpan = IntRange(mSpanRange.first, mSpanRange.last - 1)
+                    val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
+                    Log.i("SUBSOVERLAY", "word is $word")
+                    setTextSpan((word as SpannedString).toString(), newSpan)
+                }
+            }
+            true
+        }
+
+        try {
+            windowManager.addView(subtitleAdjustLayout, layoutParams)
+        }
+        catch (ex: Exception) {
+            Log.e("SUBSOVERLAY", "adding subs adjust view failed", ex)
+        }
+    }
+
+    fun setTextSpan(word: String, spanRange: IntRange) {
+        val spannableString = SpannableString(mSubtitleTextView.text)
+        spannableString.clearSpans()
+        spannableString.setSpan(
+            BackgroundColorSpan(Color.DKGRAY),
+            spanRange.first, spanRange.last,
+            Spannable.SPAN_INCLUSIVE_EXCLUSIVE
+        )
+        mSpanRange = spanRange
+        mSubtitleTextView.text = spannableString
     }
 }
