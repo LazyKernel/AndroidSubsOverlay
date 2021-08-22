@@ -35,6 +35,11 @@ class YomichanParser(context: Context) : IDictParser(context) {
 
         while (entries.hasMoreElements()) {
             val zipEntry = entries.nextElement()
+
+            if (!zipEntry.name.startsWith("term_bank_")) {
+                continue
+            }
+
             val bufferedReader = BufferedReader(InputStreamReader(zipFile.getInputStream(zipEntry)))
 
             try {
