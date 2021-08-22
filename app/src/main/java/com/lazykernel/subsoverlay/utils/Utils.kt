@@ -1,4 +1,4 @@
-package com.lazykernel.subsoverlay.service
+package com.lazykernel.subsoverlay.utils
 
 import android.content.res.Resources
 import android.util.Log

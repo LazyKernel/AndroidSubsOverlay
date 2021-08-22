@@ -19,6 +19,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.application.DummyActivity
 import com.lazykernel.subsoverlay.service.subtitle.SubtitleManager
+import com.lazykernel.subsoverlay.utils.Utils
 
 
 class MainAccessibilityService : AccessibilityService() {

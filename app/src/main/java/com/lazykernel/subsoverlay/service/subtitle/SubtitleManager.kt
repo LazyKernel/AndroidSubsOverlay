@@ -1,6 +1,5 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
-import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -15,12 +14,11 @@ import android.widget.TextView
 import android.view.WindowManager.LayoutParams
 import android.widget.Button
 import android.widget.ImageButton
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.text.clearSpans
 import com.atilika.kuromoji.ipadic.Tokenizer
 import com.lazykernel.subsoverlay.R
-import com.lazykernel.subsoverlay.service.Utils
+import com.lazykernel.subsoverlay.utils.Utils
 
 class SubtitleManager(private val applicationContext: Context, private val windowManager: WindowManager) {
     var currentTimeInSeconds: Double = 0.0
