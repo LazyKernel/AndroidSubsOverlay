@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="5dp">
+
+    <TextView
+        android:id="@+id/glossary_order_number"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="5dp"
+        android:text="1."
+        app:layout_constraintEnd_toStartOf="@+id/glossary_dict_name"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/glossary_dict_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:background="@drawable/rounded_corners"
+        android:backgroundTint="@color/purple_500"
+        android:clipToOutline="true"
+        android:padding="5dp"
+        android:text="スーパー大辞林"
+        android:textColor="@color/white"
+        app:layout_constraintStart_toEndOf="@+id/glossary_order_number"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/glossary_text"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/glossary_dict_name"
+        app:layout_constraintTop_toBottomOf="@id/glossary_dict_name" />
+</androidx.constraintlayout.widget.ConstraintLayout>

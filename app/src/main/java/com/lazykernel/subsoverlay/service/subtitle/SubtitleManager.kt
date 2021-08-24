@@ -18,6 +18,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.text.clearSpans
 import com.atilika.kuromoji.ipadic.Tokenizer
 import com.lazykernel.subsoverlay.R
+import com.lazykernel.subsoverlay.service.dictionary.DictionaryModal
 import com.lazykernel.subsoverlay.utils.Utils
 
 class SubtitleManager(private val applicationContext: Context, private val windowManager: WindowManager) {
@@ -28,6 +29,9 @@ class SubtitleManager(private val applicationContext: Context, private val windo
     lateinit var mSubtitleLayoutParams: LayoutParams
     lateinit var mSpanRange: IntRange
     var mSubtitleAdjustLayout: ConstraintLayout? = null
+    private val mDictionaryModal = DictionaryModal(applicationContext, windowManager) {
+        clearSubtitleView()
+    }
 
     fun buildSubtitleView()  {
         subtitleLayout = LinearLayout(applicationContext)
@@ -56,10 +60,9 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         mSubtitleTextView.setOnTouchListener { _, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 val (word, spanRange) = getWordFromTouchEvent(mSubtitleTextView, event)
-                Log.i("SUBSOVERLAY", "word: $word span: $spanRange")
                 if (word != null && spanRange != null) {
                     setTextSpan(word, spanRange)
-                    openSubtitleAdjustWindow(event.rawX.toInt(), event.rawY.toInt())
+                    openSubtitleAdjustWindow()
                 }
             }
             true
@@ -104,7 +107,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         return Pair(null, null)
     }
 
-    fun openSubtitleAdjustWindow(xPos: Int, yPos: Int) {
+    fun openSubtitleAdjustWindow() {
         mSubtitleAdjustLayout = View.inflate(applicationContext, R.layout.subtitle_adjust, null) as ConstraintLayout
         mSubtitleAdjustLayout?.apply {
             setBackgroundColor(Color.WHITE)
@@ -133,7 +136,6 @@ class SubtitleManager(private val applicationContext: Context, private val windo
 
                 val newSpan = IntRange(mSpanRange.first - 1, mSpanRange.last - 1)
                 val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
-                Log.i("SUBSOVERLAY", "word is $word")
                 setTextSpan((word as SpannedString).toString(), newSpan)
             }
             true
@@ -147,7 +149,6 @@ class SubtitleManager(private val applicationContext: Context, private val windo
 
                 val newSpan = IntRange(mSpanRange.first + 1, mSpanRange.last + 1)
                 val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
-                Log.i("SUBSOVERLAY", "word is $word")
                 setTextSpan((word as SpannedString).toString(), newSpan)
             }
             true
@@ -168,7 +169,6 @@ class SubtitleManager(private val applicationContext: Context, private val windo
                 }
 
                 val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
-                Log.i("SUBSOVERLAY", "word is $word")
                 setTextSpan((word as SpannedString).toString(), newSpan)
             }
             true
@@ -179,7 +179,6 @@ class SubtitleManager(private val applicationContext: Context, private val windo
                 if (mSpanRange.last - mSpanRange.first > 1) {
                     val newSpan = IntRange(mSpanRange.first, mSpanRange.last - 1)
                     val word = mSubtitleTextView.text.subSequence(newSpan.first, newSpan.last)
-                    Log.i("SUBSOVERLAY", "word is $word")
                     setTextSpan((word as SpannedString).toString(), newSpan)
                 }
             }
@@ -204,6 +203,21 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         )
         mSpanRange = spanRange
         mSubtitleTextView.text = spannableString
+
+        val coords = IntArray(2)
+        mSubtitleTextView.getLocationOnScreen(coords)
+        mDictionaryModal.buildDictionaryModal(word, coords[1])
+    }
+
+    fun clearSubtitleView() {
+        val spannableString = SpannableString(mSubtitleTextView.text)
+        spannableString.clearSpans()
+        mSubtitleTextView.text = spannableString
+
+        if (mSubtitleAdjustLayout != null) {
+            windowManager.removeView(mSubtitleAdjustLayout)
+            mSubtitleAdjustLayout = null
+        }
     }
 
     fun openDefaultViews() {

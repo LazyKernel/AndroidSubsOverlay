@@ -1,10 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:layout_marginVertical="7dp"
     android:layout_marginHorizontal="7dp">
+
+    <se.fekete.furiganatextview.furiganaview.FuriganaTextView
+        android:id="@+id/dict_slug"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="&lt;ruby&gt;例え&lt;rt&gt;たとえ&lt;/rt&gt;&lt;/ruby&gt;"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        app:contains_ruby_tags="true"
+        android:layout_marginStart="7dp" />
+
+    <!-- Room for other tags next to slug -->
+
+    <LinearLayout
+        android:id="@+id/tags_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginVertical="7dp">
+
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/glossary_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginVertical="7dp">
+
+    </androidx.recyclerview.widget.RecyclerView>
 
 </LinearLayout>
