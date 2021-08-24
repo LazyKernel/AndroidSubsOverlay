@@ -77,5 +77,6 @@ class YomichanParser(context: Context) : IDictParser(context) {
         }
 
         zipStream.close()
+        Log.i("SUBSOVERLAY", "Done parsing dict")
     }
 }

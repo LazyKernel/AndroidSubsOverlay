@@ -1,2 +1,4 @@
+include ':SubsOverlayfuriganatextview'
 include ':app'
+project(':SubsOverlayfuriganatextview').projectDir = new File(rootDir, 'furiganatextview/Furigana/furiganatextview/')
 rootProject.name = "SubsOverlay"

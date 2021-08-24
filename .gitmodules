@@ -1,0 +1,3 @@
+[submodule "furiganatextview"]
+	path = furiganatextview
+	url = https://github.com/fkt3/FuriganaTextView

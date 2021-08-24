@@ -77,4 +77,9 @@ class DictionaryDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
         super.onDowngrade(db, oldVersion, newVersion)
     }
 
+    override fun onConfigure(db: SQLiteDatabase?) {
+        super.onConfigure(db)
+        db?.setForeignKeyConstraintsEnabled(true)
+    }
+
 }

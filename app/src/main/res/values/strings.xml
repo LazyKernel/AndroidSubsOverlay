@@ -12,4 +12,6 @@
     <string name="service_start_stop_label">Start and stop the overlay service</string>
     <string name="add_dictionary">Add a new dictionary</string>
     <string name="dictionary_list">Dictionaries</string>
+    <string name="are_you_sure">Are you sure?</string>
+    <string name="delete_dict_confirmation">Are you certain you want to delete %1$s?</string>
 </resources>

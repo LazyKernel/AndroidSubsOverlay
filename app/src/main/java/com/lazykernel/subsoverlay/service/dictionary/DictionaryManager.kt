@@ -3,6 +3,7 @@ package com.lazykernel.subsoverlay.service.dictionary
 import android.content.Context
 import android.net.Uri
 import android.provider.BaseColumns
+import android.util.Log
 import org.json.JSONArray
 
 class DictionaryManager(context: Context) {
@@ -13,10 +14,17 @@ class DictionaryManager(context: Context) {
         mDictParser.parseDictionaryToDB(fileUri)
     }
 
+    fun deleteDictionary(id: Int) {
+        val db = mDBHelper.writableDatabase
+        val deletedRows = db.delete("dict_dictionaries", "id = ?", arrayOf(id.toString()))
+        Log.i("DICTIONARYMANAGER", "Deleted $deletedRows row(s)")
+    }
+
     fun getDictionaries() : List<DictionaryEntry> {
         val db = mDBHelper.readableDatabase
         val projection = arrayOf("id", "title", "revision", "version", "sequenced")
-        val cursor = db.query("dict_dictionaries", projection, null, null, null, null, null)
+        val sortBy = "id ASC"
+        val cursor = db.query("dict_dictionaries", projection, null, null, null, null, sortBy)
 
         val entries = mutableListOf<DictionaryEntry>()
         with(cursor) {
