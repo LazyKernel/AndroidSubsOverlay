@@ -13,52 +13,54 @@ class DictionaryDBHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_
     }
 
     override fun onCreate(db: SQLiteDatabase?) {
-
-    }
-
-    override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
         if (db == null) {
             Log.e("SUBSOVERLAY", "Creating dictionary db failed, db was null")
             return
         }
 
+        Log.i("SUBSOVERLAY", "Creating database")
+
         // Create dictionaries table
         db.execSQL(
             "CREATE TABLE dict_dictionaries(" +
-                "id INTEGER PRIMARY KEY," +
-                "title TEXT NOT NULL," +
-                "revision TEXT," +
-                "version INTEGER," +
-                // Will be boolean (0 or 1)
-                "sequenced INTEGER" +
-            ")"
+                    "id INTEGER PRIMARY KEY," +
+                    "title TEXT NOT NULL," +
+                    "revision TEXT," +
+                    "version INTEGER," +
+                    // Will be boolean (0 or 1)
+                    "sequenced INTEGER" +
+                    ")"
         )
 
         // Create terms table (from term_bank_*.json) files
         // Foreign key relationship with dict.dictionaries
         db.execSQL(
             "CREATE TABLE dict_terms(" +
-                "id INTEGER PRIMARY KEY," +
-                "expression TEXT," +
-                "reading TEXT," +
-                "definition_tags TEXT," +
-                "rules TEXT," +
-                "score INTEGER," +
-                // Glossary is an array, but sqlite doesn't support arrays
-                // For this use case, maybe ok to parse array to string
-                "glossary TEXT NOT NULL," +
-                "sequence INTEGER," +
-                "term_tags TEXT," +
-                "dictionary INTEGER" +
-                // ON DELETE CASCADE allows us to delete all terms in a dictionary with one
-                // delete statement on parent table
-                "FOREIGN KEY (dictionary) REFERENCES dict_dictionaries(id) ON DELETE CASCADE" +
-            ")"
+                    "id INTEGER PRIMARY KEY," +
+                    "expression TEXT," +
+                    "reading TEXT," +
+                    "definition_tags TEXT," +
+                    "rules TEXT," +
+                    "score INTEGER," +
+                    // Glossary is an array, but sqlite doesn't support arrays
+                    // For this use case, maybe ok to parse array to string
+                    "glossary TEXT NOT NULL," +
+                    "sequence INTEGER," +
+                    "term_tags TEXT," +
+                    "dictionary INTEGER," +
+                    // ON DELETE CASCADE allows us to delete all terms in a dictionary with one
+                    // delete statement on parent table
+                    "FOREIGN KEY (dictionary) REFERENCES dict_dictionaries(id) ON DELETE CASCADE" +
+                    ")"
         )
 
         // Create indexes for expression and reading columns in dict.terms
         db.execSQL("CREATE INDEX dict_idx_term_expression ON dict_terms (expression)")
         db.execSQL("CREATE INDEX dict_idx_term_reading ON dict_terms (reading)")
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
+        // TODO: Alembic type system
     }
 
     override fun onDowngrade(db: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {

@@ -9,10 +9,11 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.lang.Exception
 import java.util.zip.ZipFile
+import java.util.zip.ZipInputStream
 
 class YomichanParser(context: Context) : IDictParser(context) {
 
-    override fun parseDictionary(fileUri: Uri) {
+    override fun parseDictionaryToDB(fileUri: Uri) {
         if (!parseIndex(fileUri)) {
             // An error occurred and it has been logged
             return
@@ -23,6 +24,11 @@ class YomichanParser(context: Context) : IDictParser(context) {
             return
         }
 
+        if (mFormat != 3) {
+            Log.e("SUBSOVERLAY", "Can only read v3 dictionaries at the moment")
+            return
+        }
+
         val dictionaryID = insertNewDictionary(mTitle!!, mRevision, mFormat, mSequenced)
 
         if (dictionaryID == null) {
@@ -30,20 +36,17 @@ class YomichanParser(context: Context) : IDictParser(context) {
             return
         }
 
-        val zipFile = ZipFile(fileUri.path)
-        val entries = zipFile.entries()
+        val zipStream = ZipInputStream(context.contentResolver.openInputStream(fileUri))
+        var entry = zipStream.nextEntry
 
-        while (entries.hasMoreElements()) {
-            val zipEntry = entries.nextElement()
-
-            if (!zipEntry.name.startsWith("term_bank_")) {
+        while (entry != null) {
+            if (!entry.name.startsWith("term_bank_")) {
+                zipStream.closeEntry()
                 continue
             }
 
-            val bufferedReader = BufferedReader(InputStreamReader(zipFile.getInputStream(zipEntry)))
-
             try {
-                val jsonArray = JSONArray(bufferedReader.readText())
+                val jsonArray = JSONArray(zipEntryToString(zipStream))
                 val termEntries = arrayOfNulls<DictionaryTermEntry>(jsonArray.length())
                 for (i in 0 until jsonArray.length()) {
                     val innerArray = jsonArray.getJSONArray(i)
@@ -61,11 +64,18 @@ class YomichanParser(context: Context) : IDictParser(context) {
                 insertNewTerms(dictionaryID, termEntries)
             }
             catch (ex: JSONException) {
-                Log.e("SUBSOVERLAY", "An error occurred while trying to read '${zipEntry.name}' into a json object.", ex)
+                Log.e("SUBSOVERLAY", "An error occurred while trying to read '${entry.name}' into a json object.", ex)
             }
             catch (ex: Exception) {
-                Log.e("SUBSOVERLAY", "An error occurred while trying to read '${zipEntry.name}'", ex)
+                Log.e("SUBSOVERLAY", "An error occurred while trying to read '${entry.name}'", ex)
             }
+            finally {
+                zipStream.closeEntry()
+            }
+
+            entry = zipStream.nextEntry
         }
+
+        zipStream.close()
     }
 }

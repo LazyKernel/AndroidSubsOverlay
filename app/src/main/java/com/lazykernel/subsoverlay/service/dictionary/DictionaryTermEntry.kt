@@ -10,5 +10,7 @@ data class DictionaryTermEntry(
         val score: Long?,
         val glossary: JSONArray,
         val sequence: Long?,
-        val termTags: String?
+        val termTags: String?,
+        val entryID: Long? = null,
+        val dictionary: String? = null
 )

@@ -23,9 +23,11 @@ import com.lazykernel.subsoverlay.utils.Utils
 class SubtitleManager(private val applicationContext: Context, private val windowManager: WindowManager) {
     var currentTimeInSeconds: Double = 0.0
     lateinit var subtitleLayout: LinearLayout
-    val tokenizer = Tokenizer()
+    var mTokenizer: Tokenizer? = null
     lateinit var mSubtitleTextView: TextView
+    lateinit var mSubtitleLayoutParams: LayoutParams
     lateinit var mSpanRange: IntRange
+    var mSubtitleAdjustLayout: ConstraintLayout? = null
 
     fun buildSubtitleView()  {
         subtitleLayout = LinearLayout(applicationContext)
@@ -40,8 +42,8 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         }
         subtitleLayout.addView(mSubtitleTextView)
 
-        val layoutParams = LayoutParams()
-        layoutParams.apply {
+        mSubtitleLayoutParams = LayoutParams()
+        mSubtitleLayoutParams.apply {
             y = Utils.dpToPixels(50F).toInt()
             height = LayoutParams.WRAP_CONTENT
             width = LayoutParams.WRAP_CONTENT
@@ -62,13 +64,6 @@ class SubtitleManager(private val applicationContext: Context, private val windo
             }
             true
         }
-
-        try {
-            windowManager.addView(subtitleLayout, layoutParams)
-        }
-        catch (ex: Exception) {
-            Log.e("SUBSOVERLAY", "adding subs view failed", ex)
-        }
     }
 
     fun getWordFromTouchEvent(view: View, event: MotionEvent): Pair<String?, IntRange?> {
@@ -84,7 +79,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
                 // Just don't show anything in the future?
                 offset = view.text.length - 1
             }
-            val words = tokenizer.tokenize((view.text as SpannedString).toString())
+            val words = mTokenizer!!.tokenize((view.text as SpannedString).toString())
             var selectedWord: String
             var spanIdx: IntRange
             words.forEachIndexed { idx, token ->
@@ -110,8 +105,8 @@ class SubtitleManager(private val applicationContext: Context, private val windo
     }
 
     fun openSubtitleAdjustWindow(xPos: Int, yPos: Int) {
-        val subtitleAdjustLayout = View.inflate(applicationContext, R.layout.subtitle_adjust, null) as ConstraintLayout
-        subtitleAdjustLayout.apply {
+        mSubtitleAdjustLayout = View.inflate(applicationContext, R.layout.subtitle_adjust, null) as ConstraintLayout
+        mSubtitleAdjustLayout?.apply {
             setBackgroundColor(Color.WHITE)
         }
 
@@ -130,7 +125,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
             flags = LayoutParams.FLAG_NOT_FOCUSABLE
         }
 
-        subtitleAdjustLayout.findViewById<ImageButton>(R.id.subtitle_select_left).setOnTouchListener{ _, event ->
+        mSubtitleAdjustLayout?.findViewById<ImageButton>(R.id.subtitle_select_left)?.setOnTouchListener{ _, event ->
             if (event.action == KeyEvent.ACTION_UP) {
                 if (mSpanRange.first <= 0) {
                     return@setOnTouchListener true
@@ -144,7 +139,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
             true
         }
 
-        subtitleAdjustLayout.findViewById<ImageButton>(R.id.subtitle_select_right).setOnTouchListener{ _, event ->
+        mSubtitleAdjustLayout?.findViewById<ImageButton>(R.id.subtitle_select_right)?.setOnTouchListener{ _, event ->
             if (event.action == KeyEvent.ACTION_UP) {
                 if (mSpanRange.last >= mSubtitleTextView.text.length) {
                     return@setOnTouchListener true
@@ -158,7 +153,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
             true
         }
 
-        subtitleAdjustLayout.findViewById<Button>(R.id.subtitle_select_more).setOnTouchListener{ _, event ->
+        mSubtitleAdjustLayout?.findViewById<Button>(R.id.subtitle_select_more)?.setOnTouchListener{ _, event ->
             if (event.action == KeyEvent.ACTION_UP) {
                 var newSpan: IntRange = when {
                     mSpanRange.last < mSubtitleTextView.text.length -> {
@@ -179,7 +174,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
             true
         }
 
-        subtitleAdjustLayout.findViewById<Button>(R.id.subtitle_select_less).setOnTouchListener{ _, event ->
+        mSubtitleAdjustLayout?.findViewById<Button>(R.id.subtitle_select_less)?.setOnTouchListener{ _, event ->
             if (event.action == KeyEvent.ACTION_UP) {
                 if (mSpanRange.last - mSpanRange.first > 1) {
                     val newSpan = IntRange(mSpanRange.first, mSpanRange.last - 1)
@@ -192,7 +187,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         }
 
         try {
-            windowManager.addView(subtitleAdjustLayout, layoutParams)
+            windowManager.addView(mSubtitleAdjustLayout, layoutParams)
         }
         catch (ex: Exception) {
             Log.e("SUBSOVERLAY", "adding subs adjust view failed", ex)
@@ -209,5 +204,27 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         )
         mSpanRange = spanRange
         mSubtitleTextView.text = spannableString
+    }
+
+    fun openDefaultViews() {
+        // Handling creation here, since it takes a few seconds
+        mTokenizer = Tokenizer()
+
+        try {
+            windowManager.addView(subtitleLayout, mSubtitleLayoutParams)
+        }
+        catch (ex: Exception) {
+            Log.e("SUBSOVERLAY", "adding subs view failed", ex)
+        }
+    }
+
+    fun closeAll() {
+        windowManager.removeView(subtitleLayout)
+        if (mSubtitleAdjustLayout != null) {
+            windowManager.removeView(mSubtitleAdjustLayout)
+            mSubtitleAdjustLayout = null
+        }
+        // GC should delete
+        mTokenizer = null
     }
 }

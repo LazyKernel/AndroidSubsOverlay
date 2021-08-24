@@ -5,4 +5,11 @@
     <string name="label_no_sub_file_selected">No file selected</string>
     <string name="label_close">Close</string>
     <string name="label_subtitle_adjust">Adjust</string>
+    <string name="go_to_accessibility">Go to accessibility</string>
+    <string name="accessibility_explanation">This app requires turning on accessibility permissions. The permissions are used for displaying overlays and getting timing information from media players.</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="service_start_stop_label">Start and stop the overlay service</string>
+    <string name="add_dictionary">Add a new dictionary</string>
+    <string name="dictionary_list">Dictionaries</string>
 </resources>

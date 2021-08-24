@@ -3,9 +3,11 @@ package com.lazykernel.subsoverlay.service
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Bundle
+import androidx.preference.PreferenceManager
 import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent.ACTION_UP
@@ -26,6 +28,9 @@ class MainAccessibilityService : AccessibilityService() {
 
     var mSettingsModalOpen: Boolean = false
     lateinit var mSettingsModalLayout: ConstraintLayout
+    lateinit var mSubtitleManager: SubtitleManager
+    lateinit var mSettingsLayout: LinearLayout
+    lateinit var mSettingsLayoutParams: LayoutParams
 
     override fun onServiceConnected() {
         serviceInfo.apply {
@@ -42,19 +47,40 @@ class MainAccessibilityService : AccessibilityService() {
             notificationTimeout = 0
         }
 
+        val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        preferences.registerOnSharedPreferenceChangeListener(mPreferenceChangeListener)
+
         val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        val (settingsLayout, settingsLayoutParams) = buildSettingsButtonView()
+        val settingsPair = buildSettingsButtonView()
+        mSettingsLayout = settingsPair.first
+        mSettingsLayoutParams = settingsPair.second
 
-        try {
-            windowManager.addView(settingsLayout, settingsLayoutParams)
-        }
-        catch (ex: Exception) {
-            Log.e("SUBSOVERLAY", "adding settings icon view failed", ex)
-        }
+        mSubtitleManager = SubtitleManager(applicationContext, windowManager)
+        mSubtitleManager.buildSubtitleView()
 
-        val subManager = SubtitleManager(applicationContext, windowManager)
-        subManager.buildSubtitleView()
+        if (preferences.getBoolean("accessibilityServiceRunning", false)) {
+            try {
+                windowManager.addView(mSettingsLayout, mSettingsLayoutParams)
+            }
+            catch (ex: Exception) {
+                Log.e("SUBSOVERLAY", "adding settings icon view failed", ex)
+            }
+
+            mSubtitleManager.openDefaultViews()
+        }
     }
+
+    private val mPreferenceChangeListener =
+        SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+            if (key == "accessibilityServiceRunning") {
+                if (sharedPreferences.getBoolean("accessibilityServiceRunning", false)) {
+                    openDefaultViews()
+                }
+                else {
+                    closeAll()
+                }
+            }
+        }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         //Log.i("SUBSOVERLAY", "accessibility event $event")
@@ -177,5 +203,27 @@ class MainAccessibilityService : AccessibilityService() {
         val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
         windowManager.removeView(mSettingsModalLayout)
         mSettingsModalOpen = false
+    }
+
+    private fun openDefaultViews() {
+        val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        mSubtitleManager.openDefaultViews()
+
+        try {
+            windowManager.addView(mSettingsLayout, mSettingsLayoutParams)
+        }
+        catch (ex: Exception) {
+            Log.e("SUBSOVERLAY", "adding settings icon view failed", ex)
+        }
+    }
+
+    private fun closeAll() {
+        val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+        if (mSettingsModalOpen) {
+            closeSettingsModal()
+        }
+
+        windowManager.removeView(mSettingsLayout)
+        mSubtitleManager.closeAll()
     }
 }
