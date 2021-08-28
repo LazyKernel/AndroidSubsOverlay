@@ -9,6 +9,7 @@ import android.text.Layout
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannedString
+import android.text.method.MovementMethod
 import android.text.style.BackgroundColorSpan
 import android.util.Log
 import android.view.*
@@ -52,14 +53,13 @@ class SubtitleManager(private val applicationContext: Context, private val windo
 
     fun buildSubtitleView()  {
         subtitleLayout = LinearLayout(applicationContext)
-        // Wasnt layout translations
         mSubtitleTextView = TextView(applicationContext)
         mSubtitleTextView.apply {
             id = R.id.subsTextView
             text = SpannedString("")
             textSize = 20F
             setTextColor(Color.WHITE)
-            setBackgroundColor(0xAA000000.toInt())
+            setShadowLayer(10F, 3F, 3F, Color.BLACK)
             gravity = Gravity.CENTER_HORIZONTAL
         }
         subtitleLayout.addView(mSubtitleTextView)
@@ -224,6 +224,13 @@ class SubtitleManager(private val applicationContext: Context, private val windo
                     subtitlesShown.removeAt(idx)
                 }
             }
+        }
+
+        // quick sanity check, shouldn't take too much time
+        // above breaks when skipping on the timeline
+        // TODO: fix pollNewEventsForRange, probably rethink the entire system
+        subtitlesShown.filter { sub ->
+            sub.startTime <= currentTimeInSeconds && sub.endTime >= currentTimeInSeconds
         }
 
         // Join to string requires higher android version

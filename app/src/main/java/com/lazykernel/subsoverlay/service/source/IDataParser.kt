@@ -11,6 +11,8 @@ interface IDataParser {
     var secondsSinceStart: Double
     var secondsChanged: Boolean
     var isPaused: Boolean
+    var isInMediaPlayer: Boolean
+    var isInMediaPlayerChanged: Boolean
 
     fun updateState(event: AccessibilityEvent?)
 

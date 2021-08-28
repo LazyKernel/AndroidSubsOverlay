@@ -15,7 +15,7 @@ class SubtitleTimingTask(private val mDataParser: IDataParser, private val mSubt
     override fun run() {
         val currentTimestamp = System.currentTimeMillis()
 
-        if (mDataParser.isPaused) {
+        if (mDataParser.isPaused || !mDataParser.isInMediaPlayer) {
             mLastTimestamp = currentTimestamp
             return
         }

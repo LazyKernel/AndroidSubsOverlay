@@ -23,5 +23,9 @@
         android:background="#00FFFFFF"
         android:src="@drawable/ic_baseline_close_black_24dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:contentDescription="Close dictionary modal" />
+        <!-- contentDescription is intentionally not a string resource,
+             used in a very janky way in NetflixParser
+         -->
 </androidx.constraintlayout.widget.ConstraintLayout>

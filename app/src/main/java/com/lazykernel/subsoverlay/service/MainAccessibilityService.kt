@@ -47,15 +47,16 @@ class MainAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         serviceInfo.apply {
-            eventTypes = AccessibilityEvent.TYPE_WINDOWS_CHANGED or
-                    AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
-                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
+                        // Used for detecting entering netflix player and exiting netflix completely
+            eventTypes = AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED or
+                    // Used for detecting pause button clicks
                     AccessibilityEvent.TYPE_VIEW_CLICKED or
-                    AccessibilityEvent.TYPE_VIEW_FOCUSED
+                    // Used for parsing current time and detecting when going back to netflix menu
+                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             flags = AccessibilityServiceInfo.DEFAULT or
-                    AccessibilityServiceInfo.FLAG_INCLUDE_NOT_IMPORTANT_VIEWS or
                     AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
+                    // Used for parsing current time
                     AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
             notificationTimeout = 0
         }
@@ -121,6 +122,16 @@ class MainAccessibilityService : AccessibilityService() {
         }
 
         mDataParser.updateState(event)
+
+        if (mDataParser.isInMediaPlayerChanged) {
+            mDataParser.isInMediaPlayerChanged = false
+            if (mDataParser.isInMediaPlayer) {
+                closeAll()
+            }
+            else {
+                openDefaultViews()
+            }
+        }
     }
 
     override fun onInterrupt() {

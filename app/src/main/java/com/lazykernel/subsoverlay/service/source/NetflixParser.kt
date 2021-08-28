@@ -1,11 +1,9 @@
 package com.lazykernel.subsoverlay.service.source
 
-import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.*
 import android.view.accessibility.AccessibilityNodeInfo
-import androidx.annotation.RequiresApi
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.pow
@@ -32,8 +30,11 @@ class NetflixParser : IDataParser {
     override var episodeChanged: Boolean = false
     override var secondsSinceStart: Double = 0.0
     override var secondsChanged: Boolean = false
-    // Never seen netflix start paused (starting a movie / coming from "alt-tab")
     override var isPaused: Boolean = false
+    override var isInMediaPlayer: Boolean = false
+    override var isInMediaPlayerChanged: Boolean = false
+
+    private var ignoreNextNetflixPlayerEvent: Boolean = false
 
     private var totalLength: Int? = null
     private val timeRegex = Regex("([0-9]{0,2}):([0-9]{0,2}):([0-9]{1,2})|([0-9]{0,2}):([0-9]{1,2})")
@@ -41,21 +42,61 @@ class NetflixParser : IDataParser {
     fun Double.equalsDelta(other: Double) = abs(this - other) < max(Math.ulp(this), Math.ulp(other)) * 2
 
     override fun updateState(event: AccessibilityEvent?) {
-        Log.i("SUBSOVERLAY", "$event\n${event?.source}")
-        if (event?.eventType == TYPE_WINDOWS_CHANGED) {
-            // Assuming netflix window has been closed, pausing
-            //Log.i("SUBSOVERLAY", "assuming closed, pausing\n${event.windowChanges}\n$event\n${event.source}")
+        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.packageName != "com.netflix.mediaclient" && event.contentChangeTypes != CONTENT_CHANGE_TYPE_PANE_DISAPPEARED) {
+            // Assuming netflix window has been closed
             isPaused = true
+            if (isInMediaPlayer) {
+                isInMediaPlayer = false
+                isInMediaPlayerChanged = true
+            }
+            return
+        }
+
+        // Detecting moving back to (any?) netflix page from media player
+        // Extremely janky solution, explanation:
+        // With some limited testing, it seems like the only time TYPE_WINDOW_CONTENT_CHANGED event
+        // is fired with className androidx.recyclerview.widget.RecyclerView, is when you go back to
+        // any (or at least quite a few) of netflix main pages which makes sense. The only time this
+        // happens in the player is when you click to view all episodes which mega conveniently also
+        // happens to give us automatic pausing for that case.
+        // (Note: this seems to only happen once initially, and then only when the list is scrolled.
+        //  Good enough for now...)
+        // Additionally, when we come back from episode selection, we get a
+        // TYPE_WINDOW_STATE_CHANGED with className com.netflix.mediaclient.ui.player.PlayerActivity
+        // which, again, very conveniently also gives us unpausing for free.
+        // Forgive me Father, for I have sinned...
+        if (event?.eventType == TYPE_WINDOW_CONTENT_CHANGED && event.className == "androidx.recyclerview.widget.RecyclerView") {
+            // Assuming netflix media player window has been closed or episodes view has been entered
+            isPaused = true
+            if (isInMediaPlayer) {
+                isInMediaPlayer = false
+                isInMediaPlayerChanged = true
+            }
+            return
+        }
+
+        // For some reason, TYPE_WINDOW_STATE_CHANGED event gets fired for com.netflix.mediaclient.ui.player.PlayerActivity when we close
+        // our dictionary modal, very janky fix
+        if (event?.eventType == TYPE_VIEW_CLICKED && event.className == "android.widget.ImageButton" && event.contentDescription == "Close dictionary modal") {
+            ignoreNextNetflixPlayerEvent = true
             return
         }
 
         if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.className == "com.netflix.mediaclient.ui.player.PlayerActivity") {
-            // Assuming player entered, unpause
-            Log.i("SUBSOVERLAY", "assuming entered, unpausing")
-            isPaused = false
+            if (ignoreNextNetflixPlayerEvent) {
+                ignoreNextNetflixPlayerEvent = false
+            }
+            else {
+                // Assuming player entered
+                if (!isInMediaPlayer) {
+                    isInMediaPlayer = true
+                    isInMediaPlayerChanged = true
+                }
+                isPaused = false
+            }
         }
 
-        if (event?.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED && event.source?.viewIdResourceName == "com.netflix.mediaclient:id/player_pause_btn") {
+        if (event?.eventType == TYPE_VIEW_CLICKED && event.source?.viewIdResourceName == "com.netflix.mediaclient:id/player_pause_btn") {
             // Pause button was clicked, toggle paused state
             isPaused = !isPaused
         }
@@ -94,7 +135,6 @@ class NetflixParser : IDataParser {
 
         if (totalLength != null) {
             val secondsLeft = getSecondsLeft(timeRemainingNodes)
-            Log.v("SUBSOVERLAY", "seconds left: $secondsLeft")
             if (secondsLeft != null) {
                 if (!secondsSinceStart.equalsDelta((totalLength!! - secondsLeft).toDouble())) {
                     secondsSinceStart = (totalLength!! - secondsLeft).toDouble()

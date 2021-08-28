@@ -40,11 +40,14 @@ class DictionaryModal(private val context: Context, private val windowManager: W
 
         mDictionaryModalLayout?.findViewById<ImageButton>(R.id.button_close_dictionary)?.setOnTouchListener { view, event ->
             if (event.action == KeyEvent.ACTION_UP) {
+                view.performClick()
                 removeDictionaryModal()
                 onCloseDictModal()
             }
             true
         }
+
+        mDictionaryModalLayout?.findViewById<ImageButton>(R.id.button_close_dictionary)
 
         val layoutParams = WindowManager.LayoutParams()
 
