@@ -1,9 +1,10 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
+import android.content.Context
 import android.net.Uri
 import java.io.File
 
-interface ISubtitleParser {
+abstract class ISubtitleParser(val context: Context) {
     class Subtitle {
         var id: Int = -1
         var text: String = ""
@@ -22,17 +23,18 @@ interface ISubtitleParser {
         var type = SubtitleEventType.SUBTITLE_UNKNOWN
     }
 
-    fun pollNewEventsForRange(rangeInSeconds: ClosedFloatingPointRange<Double>): List<SubtitleEvent>
-    fun parseSubtitlesFromUri(fileUri: Uri)
+    abstract fun pollNewEventsForRange(rangeInSeconds: ClosedFloatingPointRange<Double>): List<SubtitleEvent>
+    abstract fun parseSubtitlesFromUri(fileUri: Uri)
 
     fun getFileRows(fileUri: Uri): List<String> {
         if (fileUri.path == null) {
             return listOf()
         }
 
-        val inputStream = File(fileUri.path).inputStream()
+        val inputStream = context.contentResolver.openInputStream(fileUri)
         val listOfLines = mutableListOf<String>()
-        inputStream.bufferedReader().forEachLine { listOfLines.add(it) }
+        inputStream?.bufferedReader()?.forEachLine { listOfLines.add(it) }
+        inputStream?.close()
         return listOfLines
     }
 }

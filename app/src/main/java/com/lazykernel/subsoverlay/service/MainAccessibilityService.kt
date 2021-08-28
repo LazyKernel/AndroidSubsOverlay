@@ -7,6 +7,8 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.preference.PreferenceManager
 import android.util.Log
 import android.view.Gravity
@@ -15,13 +17,19 @@ import android.view.View
 import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED
 import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.application.DummyActivity
+import com.lazykernel.subsoverlay.service.source.IDataParser
+import com.lazykernel.subsoverlay.service.source.NetflixParser
 import com.lazykernel.subsoverlay.service.subtitle.SubtitleManager
+import com.lazykernel.subsoverlay.service.subtitle.SubtitleTimingTask
 import com.lazykernel.subsoverlay.utils.Utils
+import java.util.*
+import java.util.concurrent.ScheduledThreadPoolExecutor
 
 
 class MainAccessibilityService : AccessibilityService() {
@@ -31,6 +39,11 @@ class MainAccessibilityService : AccessibilityService() {
     lateinit var mSubtitleManager: SubtitleManager
     lateinit var mSettingsLayout: LinearLayout
     lateinit var mSettingsLayoutParams: LayoutParams
+    private var mServiceRunning: Boolean = false
+    private val mTimer = Timer()
+    lateinit var mSubtitleTimingTask: SubtitleTimingTask
+    private val mDataParser = NetflixParser()
+    private val mMainThreadHandler: Handler = Handler(Looper.getMainLooper())
 
     override fun onServiceConnected() {
         serviceInfo.apply {
@@ -67,6 +80,13 @@ class MainAccessibilityService : AccessibilityService() {
             }
 
             mSubtitleManager.openDefaultViews()
+            if (this::mSubtitleTimingTask.isInitialized) {
+                mSubtitleTimingTask.cancel()
+            }
+            // Run subtitle timing task every 0.5s
+            mSubtitleTimingTask = SubtitleTimingTask(mDataParser, mSubtitleManager, mMainThreadHandler)
+            mTimer.scheduleAtFixedRate(mSubtitleTimingTask, 0, 500)
+            mServiceRunning = true
         }
     }
 
@@ -75,23 +95,32 @@ class MainAccessibilityService : AccessibilityService() {
             if (key == "accessibilityServiceRunning") {
                 if (sharedPreferences.getBoolean("accessibilityServiceRunning", false)) {
                     openDefaultViews()
+                    // Create a new timing task and make it run every 0.5s
+                    if (this::mSubtitleTimingTask.isInitialized) {
+                        mSubtitleTimingTask.cancel()
+                    }
+                    mSubtitleTimingTask = SubtitleTimingTask(mDataParser, mSubtitleManager, mMainThreadHandler)
+                    mTimer.scheduleAtFixedRate(mSubtitleTimingTask, 0, 500)
+                    mServiceRunning = true
                 }
                 else {
                     closeAll()
+                    mSubtitleTimingTask.cancel()
+                    mServiceRunning = false
                 }
             }
         }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        //Log.i("SUBSOVERLAY", "accessibility event $event")
+        if (!mServiceRunning) {
+            return
+        }
+
         if (event == null) {
             return
         }
-        
-        if (event.source == null) {
-            //Log.i("SUBSOVERLAY", "source null")
-            return
-        }
+
+        mDataParser.updateState(event)
     }
 
     override fun onInterrupt() {
@@ -156,7 +185,6 @@ class MainAccessibilityService : AccessibilityService() {
         }
 
         mSettingsModalLayout.findViewById<Button>(R.id.buttonSelectSubFile).setOnTouchListener{ view, event ->
-            Log.i("SUBSOVERLAY", "clicked select subfile $event")
             if (event.action == ACTION_UP) {
                 selectSubFile()
             }
@@ -174,6 +202,12 @@ class MainAccessibilityService : AccessibilityService() {
     private val mSubListener = object : DummyActivity.ResultListener() {
         override fun onSuccess(data: Intent?) {
             Log.i("SUBSOVERLAY", "Loaded $data")
+            if (data?.data != null) {
+                mSubtitleManager.loadSubtitlesFromUri(data.data!!)
+                val filenameLabel = mSettingsModalLayout.findViewById<TextView>(R.id.subFilenameLabel)
+                // TODO: get actual filename or something
+                filenameLabel.text = "File selected"
+            }
             openSettingsModal()
         }
 

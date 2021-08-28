@@ -1,6 +1,13 @@
 package com.lazykernel.subsoverlay.service.source
 
+import android.os.Build
+import android.util.Log
+import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityEvent.*
 import android.view.accessibility.AccessibilityNodeInfo
+import androidx.annotation.RequiresApi
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.pow
 
 class NetflixParser : IDataParser {
@@ -17,25 +24,53 @@ class NetflixParser : IDataParser {
     override val includedIds: List<String>
         get() = listOf(
                 "com.netflix.mediaclient:id/player_title_label",
-                "com.netflix.mediaclient:id/label_time_remaining"
+                "com.netflix.mediaclient:id/label_time_remaining",
+                "com.netflix.mediaclient:id/player_pause_btn"
         )
 
     override var episodeName: String = ""
-    override var secondsSinceStart: Int = 0
+    override var episodeChanged: Boolean = false
+    override var secondsSinceStart: Double = 0.0
+    override var secondsChanged: Boolean = false
+    // Never seen netflix start paused (starting a movie / coming from "alt-tab")
+    override var isPaused: Boolean = false
 
     private var totalLength: Int? = null
     private val timeRegex = Regex("([0-9]{0,2}):([0-9]{0,2}):([0-9]{1,2})|([0-9]{0,2}):([0-9]{1,2})")
 
-    override fun updateState(node: AccessibilityNodeInfo?) {
-        if (node == null)
+    fun Double.equalsDelta(other: Double) = abs(this - other) < max(Math.ulp(this), Math.ulp(other)) * 2
+
+    override fun updateState(event: AccessibilityEvent?) {
+        Log.i("SUBSOVERLAY", "$event\n${event?.source}")
+        if (event?.eventType == TYPE_WINDOWS_CHANGED) {
+            // Assuming netflix window has been closed, pausing
+            //Log.i("SUBSOVERLAY", "assuming closed, pausing\n${event.windowChanges}\n$event\n${event.source}")
+            isPaused = true
             return
+        }
+
+        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.className == "com.netflix.mediaclient.ui.player.PlayerActivity") {
+            // Assuming player entered, unpause
+            Log.i("SUBSOVERLAY", "assuming entered, unpausing")
+            isPaused = false
+        }
+
+        if (event?.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED && event.source?.viewIdResourceName == "com.netflix.mediaclient:id/player_pause_btn") {
+            // Pause button was clicked, toggle paused state
+            isPaused = !isPaused
+        }
+
+        val node = event?.source ?: return
 
         val episodeNodes = node.findAccessibilityNodeInfosByViewId("com.netflix.mediaclient:id/player_title_label")
         val timeRemainingNodes = node.findAccessibilityNodeInfosByViewId("com.netflix.mediaclient:id/label_time_remaining")
 
         for (n in episodeNodes) {
             if (n.text.isNotBlank()) {
-                episodeName = n.text.toString()
+                if (episodeName != n.text.toString()) {
+                    episodeName = n.text.toString()
+                    episodeChanged = true
+                }
             }
         }
 
@@ -59,8 +94,12 @@ class NetflixParser : IDataParser {
 
         if (totalLength != null) {
             val secondsLeft = getSecondsLeft(timeRemainingNodes)
+            Log.v("SUBSOVERLAY", "seconds left: $secondsLeft")
             if (secondsLeft != null) {
-                secondsSinceStart = totalLength!! - secondsLeft
+                if (!secondsSinceStart.equalsDelta((totalLength!! - secondsLeft).toDouble())) {
+                    secondsSinceStart = (totalLength!! - secondsLeft).toDouble()
+                    secondsChanged = true
+                }
             }
         }
     }
@@ -74,7 +113,8 @@ class NetflixParser : IDataParser {
                     return values.slice(IntRange(1, values.size - 1)).map { it.value.toInt() }
                             .reduceRightIndexed { i, v, a ->
                                 // accumulated + value * 60s ^ index -> seconds left
-                                a + (v * (60.0.pow((values.size - i).toDouble()))).toInt()
+                                // -2 because seconds are used as accumulator
+                                a + (v * (60.0.pow((values.size - 2 - i).toDouble()))).toInt()
                             }
                 }
             }

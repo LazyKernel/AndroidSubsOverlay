@@ -1,8 +1,11 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
+import android.animation.LayoutTransition
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.net.Uri
+import android.text.Layout
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannedString
@@ -23,11 +26,25 @@ import com.lazykernel.subsoverlay.utils.Utils
 
 class SubtitleManager(private val applicationContext: Context, private val windowManager: WindowManager) {
     var currentTimeInSeconds: Double = 0.0
+        set(value) {
+            if (value < oldTimeInSeconds) {
+                // Skipped backwards
+                oldTimeInSeconds = value - 1.0
+                field = value
+            }
+            else {
+                oldTimeInSeconds = currentTimeInSeconds
+                field = value
+            }
+        }
+    var oldTimeInSeconds: Double = 0.0
+    private val subtitlesShown = mutableListOf<ISubtitleParser.Subtitle>()
     lateinit var subtitleLayout: LinearLayout
     var mTokenizer: Tokenizer? = null
     lateinit var mSubtitleTextView: TextView
     lateinit var mSubtitleLayoutParams: LayoutParams
     lateinit var mSpanRange: IntRange
+    private val mSubParser = SrtParser(applicationContext)
     var mSubtitleAdjustLayout: ConstraintLayout? = null
     private val mDictionaryModal = DictionaryModal(applicationContext, windowManager) {
         clearSubtitleView()
@@ -35,10 +52,11 @@ class SubtitleManager(private val applicationContext: Context, private val windo
 
     fun buildSubtitleView()  {
         subtitleLayout = LinearLayout(applicationContext)
+        // Wasnt layout translations
         mSubtitleTextView = TextView(applicationContext)
         mSubtitleTextView.apply {
             id = R.id.subsTextView
-            text = SpannedString("何できるのかな～何できるのかな～何できるのかな～何できるのかな～何できるのかな～何できるのかな～何できるのかな～")
+            text = SpannedString("")
             textSize = 20F
             setTextColor(Color.WHITE)
             setBackgroundColor(0xAA000000.toInt())
@@ -193,7 +211,30 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         }
     }
 
-    fun setTextSpan(word: String, spanRange: IntRange) {
+    fun runSubtitleUpdate() {
+        val events = mSubParser.pollNewEventsForRange(oldTimeInSeconds..currentTimeInSeconds)
+        events.forEach { event ->
+            Log.i("SUBSOVERLAY", "event: ${event.type}, ${event.subtitle.text}")
+            if (event.type == ISubtitleParser.SubtitleEventType.SUBTITLE_SHOW) {
+                subtitlesShown.add(event.subtitle)
+            }
+            else if (event.type == ISubtitleParser.SubtitleEventType.SUBTITLE_REMOVE) {
+                val idx = subtitlesShown.indexOfFirst { s -> s.id == event.subtitle.id }
+                if (idx >= 0) {
+                    subtitlesShown.removeAt(idx)
+                }
+            }
+        }
+
+        // Join to string requires higher android version
+        updateSubtitleLine(subtitlesShown.fold("") { acc, subtitle -> acc + subtitle.text })
+    }
+
+    private fun updateSubtitleLine(newLine: String) {
+        mSubtitleTextView.text = SpannableString(newLine)
+    }
+
+    private fun setTextSpan(word: String, spanRange: IntRange) {
         val spannableString = SpannableString(mSubtitleTextView.text)
         spannableString.clearSpans()
         spannableString.setSpan(
@@ -209,7 +250,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         mDictionaryModal.buildDictionaryModal(word, coords[1])
     }
 
-    fun clearSubtitleView() {
+    private fun clearSubtitleView() {
         val spannableString = SpannableString(mSubtitleTextView.text)
         spannableString.clearSpans()
         mSubtitleTextView.text = spannableString
@@ -240,5 +281,9 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         }
         // GC should delete
         mTokenizer = null
+    }
+
+    fun loadSubtitlesFromUri(fileUri: Uri) {
+        mSubParser.parseSubtitlesFromUri(fileUri)
     }
 }

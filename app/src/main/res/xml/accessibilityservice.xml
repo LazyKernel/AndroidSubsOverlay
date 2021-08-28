@@ -3,6 +3,7 @@
     android:accessibilityFlags="flagDefault|flagIncludeNotImportantViews|flagRetrieveInteractiveWindows|flagReportViewIds"
     android:accessibilityFeedbackType="feedbackGeneric"
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewClicked|typeViewFocused|typeWindowsChanged"
+    android:packageNames="com.netflix.mediaclient"
     android:notificationTimeout="0"
     android:canRetrieveWindowContent="true">
 </accessibility-service>

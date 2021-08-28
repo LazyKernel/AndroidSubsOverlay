@@ -1,8 +1,10 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
+import android.content.Context
 import android.net.Uri
+import android.util.Log
 
-class SrtParser : ISubtitleParser {
+class SrtParser(context: Context) : ISubtitleParser(context) {
     private enum class ParsingState {
         COUNTER_LINE,
         TIMING_LINE,
@@ -13,33 +15,28 @@ class SrtParser : ISubtitleParser {
         "(\\d{2}):(\\d{2}):(\\d{2}),(\\d{3}) --> (\\d{2}):(\\d{2}):(\\d{2}),(\\d{3})"
     )
 
-    private val subtitleLines = mutableListOf<ISubtitleParser.Subtitle>()
+    private val subtitleLines = mutableListOf<Subtitle>()
 
-    override fun pollNewEventsForRange(rangeInSeconds: ClosedFloatingPointRange<Double>): List<ISubtitleParser.SubtitleEvent> {
+    override fun pollNewEventsForRange(rangeInSeconds: ClosedFloatingPointRange<Double>): List<SubtitleEvent> {
         // There probably aren't going to be enough subtitles for this to be a problem
-        val subtitleEvents = mutableListOf<ISubtitleParser.SubtitleEvent>()
+        val subtitleEvents = mutableListOf<SubtitleEvent>()
         subtitleLines.forEach lit@{
-            if (it.endTime > rangeInSeconds.endInclusive) {
-                // Subs in order, no more subs in range
-                return@lit
-            }
-
             if (rangeInSeconds.contains(it.startTime)) {
                 // Subtitle start between range, add show event
-                val event = ISubtitleParser.SubtitleEvent()
+                val event = SubtitleEvent()
                 event.apply {
                     subtitle = it
-                    type = ISubtitleParser.SubtitleEventType.SUBTITLE_SHOW
+                    type = SubtitleEventType.SUBTITLE_SHOW
                 }
                 subtitleEvents.add(event)
             }
 
             if (rangeInSeconds.contains(it.endTime)) {
                 // Subtitle end between range, add remove event
-                val event = ISubtitleParser.SubtitleEvent()
+                val event = SubtitleEvent()
                 event.apply {
                     subtitle = it
-                    type = ISubtitleParser.SubtitleEventType.SUBTITLE_REMOVE
+                    type = SubtitleEventType.SUBTITLE_REMOVE
                 }
                 subtitleEvents.add(event)
             }
@@ -50,13 +47,13 @@ class SrtParser : ISubtitleParser {
     override fun parseSubtitlesFromUri(fileUri: Uri) {
         val rows = getFileRows(fileUri)
         var parsingState = ParsingState.COUNTER_LINE
-        lateinit var currentSubtitle: ISubtitleParser.Subtitle
+        lateinit var currentSubtitle: Subtitle
 
         rows.forEach { row ->
             when (parsingState) {
                 ParsingState.COUNTER_LINE -> {
                     // Create new subtitle
-                    currentSubtitle = ISubtitleParser.Subtitle()
+                    currentSubtitle = Subtitle()
                     currentSubtitle.id = row.toInt()
                     parsingState = ParsingState.TIMING_LINE
                 }
@@ -64,10 +61,10 @@ class SrtParser : ISubtitleParser {
                     // Parse timing
                     val match = timingRegex.find(row)
                     if (match != null) {
-                        val values = match.groups.map { it?.value?.toInt() ?: 0 }
+                        val values = match.groups.drop(1).map { it?.value?.toInt() ?: 0 }
                         currentSubtitle.apply {
-                            startTime = values[1] * 3600 + values[2] * 60 + values[3] + values[4] / 1000.0
-                            endTime = values[5] * 3600 + values[6] * 60 + values[7] + values[8] / 1000.0
+                            startTime = values[0] * 3600 + values[1] * 60 + values[2] + values[3] / 1000.0
+                            endTime = values[4] * 3600 + values[5] * 60 + values[6] + values[7] / 1000.0
                         }
                     }
                     parsingState = ParsingState.SUBTITLE_LINES
@@ -75,6 +72,7 @@ class SrtParser : ISubtitleParser {
                 ParsingState.SUBTITLE_LINES -> {
                     if (row.trim().isEmpty()) {
                         subtitleLines.add(currentSubtitle)
+                        parsingState = ParsingState.COUNTER_LINE
                     }
                     else {
                         currentSubtitle.text += row
@@ -82,5 +80,6 @@ class SrtParser : ISubtitleParser {
                 }
             }
         }
+        Log.i("SUBSOVERLAY", "sub lines: ${subtitleLines.map { "${it.startTime}..${it.endTime}:  ${it.text}" }}")
     }
 }
