@@ -1,0 +1,48 @@
+name: Build & Release
+
+on: workflow_dispatch
+
+jobs:
+  Gradle:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+        
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+      
+      - name: Decode Keystore
+        env:
+          ENCODED_STRING: ${{ secrets.KEYSTORE }}
+        run: |
+          mkdir ~/.keystore
+          echo $ENCODED_STRING | base64 -di > ~/.keystore/subsoverlay.jks
+      
+      - name: Gradle Bug Fix
+        run: |
+          BUG_BUILD_TOOLS_PATH="/usr/local/lib/android/sdk/build-tools/31.0.0"
+          mv "${BUG_BUILD_TOOLS_PATH}"/d8 "${BUG_BUILD_TOOLS_PATH}"/dx
+          mv "${BUG_BUILD_TOOLS_PATH}"/lib/d8.jar "${BUG_BUILD_TOOLS_PATH}"/lib/dx.jar
+      
+      - name: Make Gradlew Executable
+        run: chmod +x ./gradlew
+      
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        
+      - name: Upload to releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.HUB_TOKEN }}
+        run: |
+          sudo apt-get install -y hub
+          hub release create -a ./app/build/outputs/apk/release/*-release.apk -m Test test
