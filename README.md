@@ -58,7 +58,7 @@ An Android development environment capable of building Gradle projects for an AP
 git clone https://github.com/LazyKernel/AndroidSubsOverlay.git
 ```
 
-2. Change FuriganaTextView's `targetSdkVersion` to the same as the main app (currently 31) in `build.gradle`. 
+2. Build the project using Gradle
 
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.
