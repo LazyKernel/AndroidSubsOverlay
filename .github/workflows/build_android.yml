@@ -1,6 +1,9 @@
 name: Build & Release
 
-on: workflow_dispatch
+on:
+  push:
+    tags:
+      - '*'
 
 jobs:
   Gradle:
@@ -45,4 +48,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.HUB_TOKEN }}
         run: |
           sudo apt-get install -y hub
-          hub release create -a ./app/build/outputs/apk/release/*-release.apk -m Test test
+          hub release create -a ./app/build/outputs/apk/release/*-release.apk -m "v${GITHUB_REF##*/}" ${GIHUB_REF##*/}
