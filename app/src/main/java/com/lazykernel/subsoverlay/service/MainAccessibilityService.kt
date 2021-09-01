@@ -18,11 +18,13 @@ import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED
+import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.application.DummyActivity
+import com.lazykernel.subsoverlay.service.source.CrunchyrollParser
 import com.lazykernel.subsoverlay.service.source.IDataParser
 import com.lazykernel.subsoverlay.service.source.NetflixParser
 import com.lazykernel.subsoverlay.service.subtitle.SubtitleManager
@@ -42,7 +44,7 @@ class MainAccessibilityService : AccessibilityService() {
     private var mServiceRunning: Boolean = false
     private val mTimer = Timer()
     lateinit var mSubtitleTimingTask: SubtitleTimingTask
-    private val mDataParser = NetflixParser()
+    private val mDataParser = CrunchyrollParser()
     private val mMainThreadHandler: Handler = Handler(Looper.getMainLooper())
 
     override fun onServiceConnected() {
@@ -121,15 +123,20 @@ class MainAccessibilityService : AccessibilityService() {
             return
         }
 
+        if (event.packageName == "com.crunchyroll.crunchyroid" && event.eventType != TYPE_WINDOW_CONTENT_CHANGED) {
+            Log.i("SUBSOVERLAY", "event: $event\nsrc: ${event.source}")
+        }
+
+
         mDataParser.updateState(event)
 
         if (mDataParser.isInMediaPlayerChanged) {
             mDataParser.isInMediaPlayerChanged = false
             if (mDataParser.isInMediaPlayer) {
-                closeAll()
+                openDefaultViews()
             }
             else {
-                openDefaultViews()
+                closeAll()
             }
         }
     }

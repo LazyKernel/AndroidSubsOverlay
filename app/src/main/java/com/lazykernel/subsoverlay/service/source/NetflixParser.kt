@@ -5,10 +5,11 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.*
 import android.view.accessibility.AccessibilityNodeInfo
 import kotlin.math.abs
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.pow
 
-class NetflixParser : IDataParser {
+class NetflixParser : IDataParser() {
     // Episode name and time remaining always seem to display for sure
     // also playback speed probably, but not implementing that yet
     // Estimate start time by looking at the seek bar and time remaining
@@ -37,11 +38,9 @@ class NetflixParser : IDataParser {
     private var ignoreNextNetflixPlayerEvent: Boolean = false
 
     private var totalLength: Int? = null
-    private val timeRegex = Regex("([0-9]{0,2}):([0-9]{0,2}):([0-9]{1,2})|([0-9]{0,2}):([0-9]{1,2})")
-
-    fun Double.equalsDelta(other: Double) = abs(this - other) < max(Math.ulp(this), Math.ulp(other)) * 2
 
     override fun updateState(event: AccessibilityEvent?) {
+        // TODO: breaks if you select settings in netflix view
         if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.packageName != "com.netflix.mediaclient" && event.contentChangeTypes != CONTENT_CHANGE_TYPE_PANE_DISAPPEARED) {
             // Assuming netflix window has been closed
             isPaused = true

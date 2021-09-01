@@ -1,10 +1,8 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
 import android.os.Handler
-import android.util.Log
 import com.lazykernel.subsoverlay.service.source.IDataParser
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 class SubtitleTimingTask(private val mDataParser: IDataParser, private val mSubtitleManager: SubtitleManager, private val mHandler: Handler) : TimerTask() {
     // Might not last over invocations / timer triggers
