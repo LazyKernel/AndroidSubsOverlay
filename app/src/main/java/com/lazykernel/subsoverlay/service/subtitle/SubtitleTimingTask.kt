@@ -1,6 +1,7 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
 import android.os.Handler
+import android.util.Log
 import com.lazykernel.subsoverlay.service.source.IDataParser
 import java.util.*
 
@@ -8,6 +9,8 @@ class SubtitleTimingTask(private val mDataParser: IDataParser, private val mSubt
     // Might not last over invocations / timer triggers
     var mLastTimestamp: Long = 0
     var mCurrentTimerInSeconds: Double = 0.0
+    // Default offset of 500ms
+    var mOffsetInMilliseconds: Int = 500
 
     // TODO: Stop when service is destroyed, only run when in netflix media player view
     override fun run() {
@@ -30,7 +33,7 @@ class SubtitleTimingTask(private val mDataParser: IDataParser, private val mSubt
             mCurrentTimerInSeconds = mDataParser.secondsSinceStart
         }
 
-        mSubtitleManager.currentTimeInSeconds = mCurrentTimerInSeconds
+        mSubtitleManager.currentTimeInSeconds = mCurrentTimerInSeconds + (mOffsetInMilliseconds / 1000.0)
         mHandler.post {
             mSubtitleManager.runSubtitleUpdate()
         }

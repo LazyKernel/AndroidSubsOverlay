@@ -11,6 +11,9 @@ Play button clicked: classname = android.widget.ImageButton, text = Play
 Current time: com.crunchyroll.crunchyroid:id/current_time TYPE_WINDOW_CONTENT_CHANGED (6:45)
 Enter: com.ellation.crunchyroll.presentation.content.WatchPageActivity TYPE_WINDOW_STATE_CHANGED? with the same thing as netflix with overlay closing
 ( works even when coming to full screen)
+
+For episode:
+I/SUBSOVERLAY: event: EventType: TYPE_VIEW_CLICKED; EventTime: 918269; PackageName: com.crunchyroll.crunchyroid; MovementGranularity: 0; Action: 0; ContentChangeTypes: []; WindowChangeTypes: [] [ ClassName: android.view.ViewGroup; Text: [S1 E1 - The Strongest Maid in History, Tohru! (Well, She is a Dragon), 23m]; ContentDescription: null; ItemCount: -1; CurrentItemIndex: -1; Enabled: true; Password: false; Checked: false; FullScreen: false; Scrollable: false; BeforeText: null; FromIndex: -1; ToIndex: -1; ScrollX: 0; ScrollY: 0; MaxScrollX: 0; MaxScrollY: 0; ScrollDeltaX: -1; ScrollDeltaY: -1; AddedCount: -1; RemovedCount: -1; ParcelableData: null ]; recordCount: 0
  */
 class CrunchyrollParser : IDataParser() {
     override val includedIds: List<String>
@@ -25,11 +28,31 @@ class CrunchyrollParser : IDataParser() {
     override var secondsChanged: Boolean = false
     override var isPaused: Boolean = true
 
-    // TODO: figure out how to get this
     override var isInMediaPlayer: Boolean = true
     override var isInMediaPlayerChanged: Boolean = false
 
     override fun updateState(event: AccessibilityEvent?) {
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+                && event.packageName != "com.crunchyroll.crunchyroid"
+                && event.packageName != "com.lazykernel.subsoverlay"
+                && event.contentChangeTypes != AccessibilityEvent.CONTENT_CHANGE_TYPE_PANE_DISAPPEARED) {
+            // Assuming crunchyroll window has been closed
+            isPaused = true
+            if (isInMediaPlayer) {
+                isInMediaPlayer = false
+                isInMediaPlayerChanged = true
+            }
+            return
+        }
+
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && event.className == "com.ellation.crunchyroll.presentation.content.WatchPageActivity") {
+            // Assuming player entered
+            if (!isInMediaPlayer) {
+                isInMediaPlayer = true
+                isInMediaPlayerChanged = true
+            }
+        }
+
         if (event?.eventType == TYPE_VIEW_CLICKED && event.className == "android.widget.ImageButton") {
             // Pause button was clicked, set paused state
             if (event.text.toString() == "[Pause]") {

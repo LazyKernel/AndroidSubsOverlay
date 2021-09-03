@@ -22,6 +22,7 @@ import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.widget.*
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.widget.doOnTextChanged
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.application.DummyActivity
 import com.lazykernel.subsoverlay.service.source.CrunchyrollParser
@@ -103,7 +104,7 @@ class MainAccessibilityService : AccessibilityService() {
                         mSubtitleTimingTask.cancel()
                     }
                     mSubtitleTimingTask = SubtitleTimingTask(mDataParser, mSubtitleManager, mMainThreadHandler)
-                    mTimer.scheduleAtFixedRate(mSubtitleTimingTask, 0, 500)
+                    mTimer.scheduleAtFixedRate(mSubtitleTimingTask, 0, 250)
                     mServiceRunning = true
                 }
                 else {
@@ -207,6 +208,13 @@ class MainAccessibilityService : AccessibilityService() {
                 selectSubFile()
             }
             true
+        }
+
+        // TODO: either change the way exiting the player is detected or change this to a button type +- interface like subtitle selection adjust
+        mSettingsModalLayout.findViewById<EditText>(R.id.editOffset).doOnTextChanged { text, start, before, count ->
+            text.toString().toIntOrNull(10)?.let {
+                mSubtitleTimingTask.mOffsetInMilliseconds = it
+            }
         }
 
         try {

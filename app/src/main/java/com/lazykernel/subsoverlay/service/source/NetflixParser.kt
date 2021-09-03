@@ -1,12 +1,8 @@
 package com.lazykernel.subsoverlay.service.source
 
-import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.*
 import android.view.accessibility.AccessibilityNodeInfo
-import kotlin.math.abs
-import kotlin.math.floor
-import kotlin.math.max
 import kotlin.math.pow
 
 class NetflixParser : IDataParser() {
@@ -35,13 +31,13 @@ class NetflixParser : IDataParser() {
     override var isInMediaPlayer: Boolean = false
     override var isInMediaPlayerChanged: Boolean = false
 
-    private var ignoreNextNetflixPlayerEvent: Boolean = false
-
     private var totalLength: Int? = null
 
     override fun updateState(event: AccessibilityEvent?) {
-        // TODO: breaks if you select settings in netflix view
-        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.packageName != "com.netflix.mediaclient" && event.contentChangeTypes != CONTENT_CHANGE_TYPE_PANE_DISAPPEARED) {
+        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED
+                && event.packageName != "com.netflix.mediaclient"
+                && event.packageName != "com.lazykernel.subsoverlay"
+                && event.contentChangeTypes != CONTENT_CHANGE_TYPE_PANE_DISAPPEARED) {
             // Assuming netflix window has been closed
             isPaused = true
             if (isInMediaPlayer) {
@@ -74,25 +70,13 @@ class NetflixParser : IDataParser() {
             return
         }
 
-        // For some reason, TYPE_WINDOW_STATE_CHANGED event gets fired for com.netflix.mediaclient.ui.player.PlayerActivity when we close
-        // our dictionary modal, very janky fix
-        if (event?.eventType == TYPE_VIEW_CLICKED && event.className == "android.widget.ImageButton" && event.contentDescription == "Close dictionary modal") {
-            ignoreNextNetflixPlayerEvent = true
-            return
-        }
-
         if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.className == "com.netflix.mediaclient.ui.player.PlayerActivity") {
-            if (ignoreNextNetflixPlayerEvent) {
-                ignoreNextNetflixPlayerEvent = false
+            // Assuming player entered
+            if (!isInMediaPlayer) {
+                isInMediaPlayer = true
+                isInMediaPlayerChanged = true
             }
-            else {
-                // Assuming player entered
-                if (!isInMediaPlayer) {
-                    isInMediaPlayer = true
-                    isInMediaPlayerChanged = true
-                }
-                isPaused = false
-            }
+            isPaused = false
         }
 
         if (event?.eventType == TYPE_VIEW_CLICKED && event.source?.viewIdResourceName == "com.netflix.mediaclient:id/player_pause_btn") {

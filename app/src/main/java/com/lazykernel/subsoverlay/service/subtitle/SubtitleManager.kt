@@ -1,15 +1,12 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
-import android.animation.LayoutTransition
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.net.Uri
-import android.text.Layout
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannedString
-import android.text.method.MovementMethod
 import android.text.style.BackgroundColorSpan
 import android.util.Log
 import android.view.*
@@ -40,7 +37,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         }
     var oldTimeInSeconds: Double = 0.0
     private val subtitlesShown = mutableListOf<ISubtitleParser.Subtitle>()
-    lateinit var subtitleLayout: LinearLayout
+    lateinit var mSubtitleLayout: LinearLayout
     var mTokenizer: Tokenizer? = null
     lateinit var mSubtitleTextView: TextView
     lateinit var mSubtitleLayoutParams: LayoutParams
@@ -52,7 +49,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
     }
 
     fun buildSubtitleView()  {
-        subtitleLayout = LinearLayout(applicationContext)
+        mSubtitleLayout = LinearLayout(applicationContext)
         mSubtitleTextView = TextView(applicationContext)
         mSubtitleTextView.apply {
             id = R.id.subsTextView
@@ -60,9 +57,8 @@ class SubtitleManager(private val applicationContext: Context, private val windo
             textSize = 20F
             setTextColor(Color.WHITE)
             setShadowLayer(10F, 3F, 3F, Color.BLACK)
-            gravity = Gravity.CENTER_HORIZONTAL
         }
-        subtitleLayout.addView(mSubtitleTextView)
+        mSubtitleLayout.addView(mSubtitleTextView)
 
         mSubtitleLayoutParams = LayoutParams()
         mSubtitleLayoutParams.apply {
@@ -238,7 +234,13 @@ class SubtitleManager(private val applicationContext: Context, private val windo
     }
 
     private fun updateSubtitleLine(newLine: String) {
-        mSubtitleTextView.text = SpannableString(newLine)
+        // TODO: actually figure out why text is moving and displaying remnants of old text
+        if (newLine.isBlank()) {
+            mSubtitleTextView.text = SpannableString(" ")
+        }
+        else {
+            mSubtitleTextView.text = SpannableString(newLine)
+        }
     }
 
     private fun setTextSpan(word: String, spanRange: IntRange) {
@@ -273,7 +275,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         mTokenizer = Tokenizer()
 
         try {
-            windowManager.addView(subtitleLayout, mSubtitleLayoutParams)
+            windowManager.addView(mSubtitleLayout, mSubtitleLayoutParams)
         }
         catch (ex: Exception) {
             Log.e("SUBSOVERLAY", "adding subs view failed", ex)
@@ -281,7 +283,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
     }
 
     fun closeAll() {
-        windowManager.removeView(subtitleLayout)
+        windowManager.removeView(mSubtitleLayout)
         if (mSubtitleAdjustLayout != null) {
             windowManager.removeView(mSubtitleAdjustLayout)
             mSubtitleAdjustLayout = null

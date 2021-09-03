@@ -24,7 +24,7 @@
         android:layout_marginEnd="36dp"
         android:ems="10"
         android:inputType="number"
-        android:text="0"
+        android:text="500"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonSelectSubFile" />
 
