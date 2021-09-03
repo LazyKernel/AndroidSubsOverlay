@@ -1,4 +1,4 @@
-package com.lazykernel.subsoverlay.service.dictionary
+package com.lazykernel.subsoverlay.service.dictionary.data
 
 import org.json.JSONArray
 

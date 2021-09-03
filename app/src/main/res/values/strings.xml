@@ -14,4 +14,5 @@
     <string name="dictionary_list">Dictionaries</string>
     <string name="are_you_sure">Are you sure?</string>
     <string name="delete_dict_confirmation">Are you certain you want to delete %1$s?</string>
+    <string name="no_results">No results</string>
 </resources>

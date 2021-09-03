@@ -76,7 +76,10 @@ class SubtitleManager(private val applicationContext: Context, private val windo
                 val (word, spanRange) = getWordFromTouchEvent(mSubtitleTextView, event)
                 if (word != null && spanRange != null) {
                     setTextSpan(word, spanRange)
-                    openSubtitleAdjustWindow()
+                    // Open subtitle adjust layout if it doesn't exist
+                    if (mSubtitleAdjustLayout == null) {
+                        openSubtitleAdjustWindow()
+                    }
                 }
             }
             true
@@ -225,7 +228,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         // quick sanity check, shouldn't take too much time
         // above breaks when skipping on the timeline
         // TODO: fix pollNewEventsForRange, probably rethink the entire system
-        subtitlesShown.filter { sub ->
+        subtitlesShown.retainAll { sub ->
             sub.startTime <= currentTimeInSeconds && sub.endTime >= currentTimeInSeconds
         }
 

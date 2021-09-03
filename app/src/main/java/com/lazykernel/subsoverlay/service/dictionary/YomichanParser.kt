@@ -3,12 +3,10 @@ package com.lazykernel.subsoverlay.service.dictionary
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryTermEntry
 import org.json.JSONArray
 import org.json.JSONException
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.lang.Exception
-import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 class YomichanParser(context: Context) : IDictParser(context) {

@@ -1,20 +1,15 @@
 package com.lazykernel.subsoverlay.service.dictionary
 
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.core.database.sqlite.transaction
-import org.json.JSONArray
+import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryDBHelper
+import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryTermEntry
 import org.json.JSONException
 import org.json.JSONObject
-import java.io.BufferedReader
 import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.InputStreamReader
-import java.util.zip.ZipEntry
-import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 
 abstract class IDictParser(val context: Context) {

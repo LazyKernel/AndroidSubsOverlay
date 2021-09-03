@@ -63,7 +63,6 @@ class CrunchyrollParser : IDataParser() {
                 // paused
                 isPaused = true
             }
-            Log.i("SUBSOVERLAY", "paused: $isPaused text: ${event.text}")
         }
 
         if (event?.eventType == TYPE_WINDOW_CONTENT_CHANGED && event.source?.viewIdResourceName == "com.crunchyroll.crunchyroid:id/current_time") {
@@ -80,7 +79,6 @@ class CrunchyrollParser : IDataParser() {
 
                 if (!secondsSinceStart.equalsDelta(newSeconds.toDouble())) {
                     secondsSinceStart = newSeconds.toDouble()
-                    Log.i("SUBSOVERLAY", "seconds: $secondsSinceStart")
                     secondsChanged = true
                 }
             }

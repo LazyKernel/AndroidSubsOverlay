@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.lazykernel.subsoverlay.R
+import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryTermEntry
 
 class DictionaryEntryAdapter(private val entries: List<DictionaryTermEntry>) : RecyclerView.Adapter<DictionaryEntryAdapter.ViewHolder>() {
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {

@@ -2,8 +2,10 @@ package com.lazykernel.subsoverlay.service.dictionary
 
 import android.content.Context
 import android.net.Uri
-import android.provider.BaseColumns
 import android.util.Log
+import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryDBHelper
+import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryEntry
+import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryTermEntry
 import org.json.JSONArray
 
 class DictionaryManager(context: Context) {
