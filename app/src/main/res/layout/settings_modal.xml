@@ -33,7 +33,6 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
         android:text="-100"
-        app:layout_constraintEnd_toStartOf="@+id/editOffset"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/offsetLabel" />
 
@@ -44,7 +43,6 @@
         android:layout_marginEnd="32dp"
         android:text="+100"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/editOffset"
         app:layout_constraintTop_toBottomOf="@+id/offsetLabel" />
 
     <TextView
