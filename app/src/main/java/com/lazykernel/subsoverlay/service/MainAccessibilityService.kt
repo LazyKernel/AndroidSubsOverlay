@@ -124,11 +124,6 @@ class MainAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (event.packageName == "com.crunchyroll.crunchyroid" && event.eventType != TYPE_WINDOW_CONTENT_CHANGED) {
-            Log.i("SUBSOVERLAY", "event: $event\nsrc: ${event.source}")
-        }
-
-
         mDataParser.updateState(event)
 
         if (mDataParser.isInMediaPlayerChanged) {
@@ -156,7 +151,7 @@ class MainAccessibilityService : AccessibilityService() {
         val layoutParams = LayoutParams()
         layoutParams.apply {
             x = Utils.dpToPixels(10F).toInt()
-            y = Utils.dpToPixels(10F).toInt()
+            y = Utils.dpToPixels(75F).toInt()
             width = Utils.dpToPixels(20F).toInt()
             height = Utils.dpToPixels(20F).toInt()
             type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
@@ -210,11 +205,21 @@ class MainAccessibilityService : AccessibilityService() {
             true
         }
 
-        // TODO: either change the way exiting the player is detected or change this to a button type +- interface like subtitle selection adjust
-        mSettingsModalLayout.findViewById<EditText>(R.id.editOffset).doOnTextChanged { text, start, before, count ->
-            text.toString().toIntOrNull(10)?.let {
-                mSubtitleTimingTask.mOffsetInMilliseconds = it
+        val subOffsetTextView = mSettingsModalLayout.findViewById<TextView>(R.id.sub_offset)
+        mSettingsModalLayout.findViewById<Button>(R.id.offset_minus_100_btn).setOnTouchListener { view, event ->
+            if (event.action == ACTION_UP) {
+                mSubtitleTimingTask.mOffsetInMilliseconds -= 100
+                subOffsetTextView.text = mSubtitleTimingTask.mOffsetInMilliseconds.toString()
             }
+            true
+        }
+
+        mSettingsModalLayout.findViewById<Button>(R.id.offset_plus_100_btn).setOnTouchListener { view, event ->
+            if (event.action == ACTION_UP) {
+                mSubtitleTimingTask.mOffsetInMilliseconds += 100
+                subOffsetTextView.text = mSubtitleTimingTask.mOffsetInMilliseconds.toString()
+            }
+            true
         }
 
         try {

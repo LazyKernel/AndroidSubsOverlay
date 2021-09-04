@@ -16,27 +16,44 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <EditText
-        android:id="@+id/editOffset"
-        android:layout_width="150dp"
-        android:layout_height="40dp"
+    <TextView
+        android:id="@+id/sub_offset"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="36dp"
-        android:ems="10"
-        android:inputType="number"
         android:text="500"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/buttonSelectSubFile" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/offsetLabel" />
+
+    <Button
+        android:id="@+id/offset_minus_100_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:text="-100"
+        app:layout_constraintEnd_toStartOf="@+id/editOffset"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/offsetLabel" />
+
+    <Button
+        android:id="@+id/offset_plus_100_btn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="32dp"
+        android:text="+100"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/editOffset"
+        app:layout_constraintTop_toBottomOf="@+id/offsetLabel" />
 
     <TextView
         android:id="@+id/offsetLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="38dp"
-        android:layout_marginEnd="4dp"
         android:text="@string/label_sub_offset"
-        app:layout_constraintEnd_toStartOf="@+id/editOffset"
-        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/subFilenameLabel" />
 

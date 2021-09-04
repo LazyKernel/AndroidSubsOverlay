@@ -40,6 +40,7 @@ class YomichanParser(context: Context) : IDictParser(context) {
         while (entry != null) {
             if (!entry.name.startsWith("term_bank_")) {
                 zipStream.closeEntry()
+                entry = zipStream.nextEntry
                 continue
             }
 

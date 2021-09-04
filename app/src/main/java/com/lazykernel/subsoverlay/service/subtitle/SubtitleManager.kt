@@ -1,5 +1,6 @@
 package com.lazykernel.subsoverlay.service.subtitle
 
+import android.animation.LayoutTransition
 import android.content.Context
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -7,7 +8,9 @@ import android.net.Uri
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.SpannedString
+import android.text.TextPaint
 import android.text.style.BackgroundColorSpan
+import android.util.AttributeSet
 import android.util.Log
 import android.view.*
 import android.widget.LinearLayout
@@ -56,15 +59,19 @@ class SubtitleManager(private val applicationContext: Context, private val windo
             text = SpannedString("")
             textSize = 20F
             setTextColor(Color.WHITE)
-            setShadowLayer(10F, 3F, 3F, Color.BLACK)
+            setShadowLayer(3F, 3F, 3F, Color.BLACK)
+            setPadding(1, 1, 5, 5)
         }
-        mSubtitleLayout.addView(mSubtitleTextView)
+        mSubtitleLayout.apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            addView(mSubtitleTextView)
+        }
 
         mSubtitleLayoutParams = LayoutParams()
         mSubtitleLayoutParams.apply {
             y = Utils.dpToPixels(50F).toInt()
             height = LayoutParams.WRAP_CONTENT
-            width = LayoutParams.WRAP_CONTENT
+            width = LayoutParams.MATCH_PARENT
             type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
             gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
             format = PixelFormat.TRANSPARENT
@@ -237,13 +244,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
     }
 
     private fun updateSubtitleLine(newLine: String) {
-        // TODO: actually figure out why text is moving and displaying remnants of old text
-        if (newLine.isBlank()) {
-            mSubtitleTextView.text = SpannableString(" ")
-        }
-        else {
-            mSubtitleTextView.text = SpannableString(newLine)
-        }
+        mSubtitleTextView.text = SpannableString(newLine)
     }
 
     private fun setTextSpan(word: String, spanRange: IntRange) {
