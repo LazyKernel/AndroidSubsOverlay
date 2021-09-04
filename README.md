@@ -30,16 +30,15 @@ the Netflix media player, are somewhat possible, although in a very *very* janky
 ### Features and limitations
 Currently supports a very limited set of features with multiple caveats.
 
-- Only supports Netflix at the moment
+- Only supports Netflix and Crunchyroll at the moment
 - Reads dictionaries in Yomichan format version 3, but only term bank entries 
   (aka words, no frequency lists or tags etc.)
 - Requires manually selecting subtitles for each episode, only reads srt format
-- Supports skipping by 
+- Supports skipping
 
 ### Planned future additions
-- Card export to Anki, audio recording / screenshots will not be supported due to Netflix's DRM
+- Card export to Anki, audio recording / screenshots will not be supported due to DRM
 - Forvo integration
-- "Easyish" extensibility to work with other streaming services
 
 ## Downloads
 For the latest version, [click here](https://github.com/LazyKernel/AndroidSubsOverlay/releases/latest).
