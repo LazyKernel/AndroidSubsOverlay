@@ -206,6 +206,8 @@ class MainAccessibilityService : AccessibilityService() {
         }
 
         val subOffsetTextView = mSettingsModalLayout.findViewById<TextView>(R.id.sub_offset)
+        subOffsetTextView.text = mSubtitleTimingTask.mOffsetInMilliseconds.toString()
+
         mSettingsModalLayout.findViewById<Button>(R.id.offset_minus_100_btn).setOnTouchListener { view, event ->
             if (event.action == ACTION_UP) {
                 mSubtitleTimingTask.mOffsetInMilliseconds -= 100

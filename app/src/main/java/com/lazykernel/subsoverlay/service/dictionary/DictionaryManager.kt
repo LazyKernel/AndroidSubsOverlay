@@ -43,7 +43,7 @@ class DictionaryManager(context: Context) {
     }
 
     // Value, either reading or expression
-    fun getEntryForValue(value: String): List<DictionaryTermEntry> {
+    fun getEntryForValue(value: String): MutableList<DictionaryTermEntry> {
         val db = mDBHelper.readableDatabase
         val entryQuery = "SELECT t.*, d.title FROM dict_terms t LEFT JOIN dict_dictionaries d ON t.dictionary = d.id WHERE t.expression = ? OR t.reading = ?"
         val cursor = db.rawQuery(entryQuery, arrayOf(value, value))

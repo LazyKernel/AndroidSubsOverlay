@@ -35,6 +35,11 @@ abstract class ISubtitleParser(val context: Context) {
         val listOfLines = mutableListOf<String>()
         inputStream?.bufferedReader()?.forEachLine { listOfLines.add(it) }
         inputStream?.close()
+
+        // Remove unicode bom
+        if (listOfLines[0].startsWith("\uFEFF")) {
+            listOfLines[0] = listOfLines[0].substring(1)
+        }
         return listOfLines
     }
 }

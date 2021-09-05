@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryTermEntry
 import com.lazykernel.subsoverlay.utils.Utils
+import com.mariten.kanatools.KanaConverter
 import java.lang.Exception
 
 class DictionaryModal(private val context: Context, private val windowManager: WindowManager, private val onCloseDictModal: (() -> Unit)) {
@@ -60,7 +61,18 @@ class DictionaryModal(private val context: Context, private val windowManager: W
         }
 
         val modalLayout = mDictionaryModalLayout?.findViewById<RecyclerView>(R.id.dictionary_modal_layout)
+
+        val convOpFlags = KanaConverter.OP_ZEN_ASCII_TO_HAN_ASCII or KanaConverter.OP_HAN_KATA_TO_ZEN_HIRA or KanaConverter.OP_ZEN_KATA_TO_ZEN_HIRA
+        val readingSearchTerm = KanaConverter.convertKana(searchTerm, convOpFlags)
+
         val entries = mDictManager.getEntryForValue(searchTerm)
+        val readingEntries = mDictManager.getEntryForValue(readingSearchTerm)
+
+        readingEntries.forEach {
+            if (entries.all { v -> v.entryID != it.entryID }) {
+                entries.add(it)
+            }
+        }
 
         if (modalLayout != null) {
             if (entries.isNotEmpty()) {
