@@ -181,8 +181,8 @@ class MainAccessibilityService : AccessibilityService() {
         val layoutParams = LayoutParams()
 
         layoutParams.apply {
-            width = Utils.dpToPixels(350F).toInt()
-            height = Utils.dpToPixels(200F).toInt()
+            width = resources.getDimension(R.dimen._275sdp).toInt()
+            height = resources.getDimension(R.dimen._160sdp).toInt()
             type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
             gravity = Gravity.CENTER
             format = PixelFormat.TRANSPARENT
