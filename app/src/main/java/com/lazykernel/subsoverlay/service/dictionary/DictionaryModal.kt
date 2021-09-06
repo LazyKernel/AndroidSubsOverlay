@@ -51,9 +51,9 @@ class DictionaryModal(private val context: Context, private val windowManager: W
         val layoutParams = WindowManager.LayoutParams()
 
         layoutParams.apply {
-            y = yPos - Utils.dpToPixels(250F).toInt()
-            width = Utils.dpToPixels(300F).toInt()
-            height = Utils.dpToPixels(200F).toInt()
+            y = yPos - context.resources.getDimension(R.dimen._210sdp).toInt()
+            width = context.resources.getDimension(R.dimen._250sdp).toInt()
+            height = context.resources.getDimension(R.dimen._175sdp).toInt()
             type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
             format = PixelFormat.TRANSPARENT

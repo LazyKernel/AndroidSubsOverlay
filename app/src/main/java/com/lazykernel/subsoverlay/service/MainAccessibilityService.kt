@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -20,6 +21,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.widget.*
+import androidx.annotation.RequiresApi
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.widget.doOnTextChanged
@@ -47,6 +49,7 @@ class MainAccessibilityService : AccessibilityService() {
     lateinit var mSubtitleTimingTask: SubtitleTimingTask
     private val mDataParser = CrunchyrollParser()
     private val mMainThreadHandler: Handler = Handler(Looper.getMainLooper())
+    private var mSelectedFile: String? = null
 
     override fun onServiceConnected() {
         serviceInfo.apply {
@@ -55,7 +58,8 @@ class MainAccessibilityService : AccessibilityService() {
                     // Used for detecting pause button clicks
                     AccessibilityEvent.TYPE_VIEW_CLICKED or
                     // Used for parsing current time and detecting when going back to netflix menu
-                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+                    AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED or
+                    AccessibilityEvent.TYPE_WINDOWS_CHANGED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             flags = AccessibilityServiceInfo.DEFAULT or
                     AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS or
@@ -76,20 +80,13 @@ class MainAccessibilityService : AccessibilityService() {
         mSubtitleManager.buildSubtitleView()
 
         if (preferences.getBoolean("accessibilityServiceRunning", false)) {
-            try {
-                windowManager.addView(mSettingsLayout, mSettingsLayoutParams)
-            }
-            catch (ex: Exception) {
-                Log.e("SUBSOVERLAY", "adding settings icon view failed", ex)
-            }
-
-            mSubtitleManager.openDefaultViews()
             if (this::mSubtitleTimingTask.isInitialized) {
                 mSubtitleTimingTask.cancel()
             }
             // Run subtitle timing task every 0.5s
             mSubtitleTimingTask = SubtitleTimingTask(mDataParser, mSubtitleManager, mMainThreadHandler)
             mTimer.scheduleAtFixedRate(mSubtitleTimingTask, 0, 500)
+            mSubtitleTimingTask.mOffsetInMilliseconds = preferences.getInt("subtitleOffset", 0)
             mServiceRunning = true
         }
     }
@@ -98,13 +95,14 @@ class MainAccessibilityService : AccessibilityService() {
         SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
             if (key == "accessibilityServiceRunning") {
                 if (sharedPreferences.getBoolean("accessibilityServiceRunning", false)) {
-                    openDefaultViews()
                     // Create a new timing task and make it run every 0.5s
                     if (this::mSubtitleTimingTask.isInitialized) {
                         mSubtitleTimingTask.cancel()
                     }
                     mSubtitleTimingTask = SubtitleTimingTask(mDataParser, mSubtitleManager, mMainThreadHandler)
                     mTimer.scheduleAtFixedRate(mSubtitleTimingTask, 0, 250)
+                    val preferences = PreferenceManager.getDefaultSharedPreferences(this@MainAccessibilityService)
+                    mSubtitleTimingTask.mOffsetInMilliseconds = preferences.getInt("subtitleOffset", 0)
                     mServiceRunning = true
                 }
                 else {
@@ -124,7 +122,7 @@ class MainAccessibilityService : AccessibilityService() {
             return
         }
 
-        mDataParser.updateState(event)
+        mDataParser.updateState(event, this)
 
         if (mDataParser.isInMediaPlayerChanged) {
             mDataParser.isInMediaPlayerChanged = false
@@ -208,10 +206,17 @@ class MainAccessibilityService : AccessibilityService() {
         val subOffsetTextView = mSettingsModalLayout.findViewById<TextView>(R.id.sub_offset)
         subOffsetTextView.text = mSubtitleTimingTask.mOffsetInMilliseconds.toString()
 
+        if (mSelectedFile != null) {
+            val filenameLabel = mSettingsModalLayout.findViewById<TextView>(R.id.subFilenameLabel)
+            filenameLabel.text = mSelectedFile
+        }
+
         mSettingsModalLayout.findViewById<Button>(R.id.offset_minus_100_btn).setOnTouchListener { view, event ->
             if (event.action == ACTION_UP) {
                 mSubtitleTimingTask.mOffsetInMilliseconds -= 100
                 subOffsetTextView.text = mSubtitleTimingTask.mOffsetInMilliseconds.toString()
+                val preferences = PreferenceManager.getDefaultSharedPreferences(this@MainAccessibilityService)
+                preferences.edit().putInt("subtitleOffset", mSubtitleTimingTask.mOffsetInMilliseconds).apply()
             }
             true
         }
@@ -220,6 +225,8 @@ class MainAccessibilityService : AccessibilityService() {
             if (event.action == ACTION_UP) {
                 mSubtitleTimingTask.mOffsetInMilliseconds += 100
                 subOffsetTextView.text = mSubtitleTimingTask.mOffsetInMilliseconds.toString()
+                val preferences = PreferenceManager.getDefaultSharedPreferences(this@MainAccessibilityService)
+                preferences.edit().putInt("subtitleOffset", mSubtitleTimingTask.mOffsetInMilliseconds).apply()
             }
             true
         }
@@ -239,6 +246,7 @@ class MainAccessibilityService : AccessibilityService() {
                 mSubtitleManager.loadSubtitlesFromUri(data.data!!)
                 val filenameLabel = mSettingsModalLayout.findViewById<TextView>(R.id.subFilenameLabel)
                 // TODO: get actual filename or something
+                mSelectedFile = "File selected"
                 filenameLabel.text = "File selected"
             }
             openSettingsModal()
@@ -277,7 +285,9 @@ class MainAccessibilityService : AccessibilityService() {
         mSubtitleManager.openDefaultViews()
 
         try {
-            windowManager.addView(mSettingsLayout, mSettingsLayoutParams)
+            if (!mSettingsLayout.isAttachedToWindow) {
+                windowManager.addView(mSettingsLayout, mSettingsLayoutParams)
+            }
         }
         catch (ex: Exception) {
             Log.e("SUBSOVERLAY", "adding settings icon view failed", ex)
@@ -290,7 +300,9 @@ class MainAccessibilityService : AccessibilityService() {
             closeSettingsModal()
         }
 
-        windowManager.removeView(mSettingsLayout)
+        if (mSettingsLayout.isAttachedToWindow) {
+            windowManager.removeView(mSettingsLayout)
+        }
         mSubtitleManager.closeAll()
     }
 }

@@ -57,7 +57,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         mSubtitleTextView.apply {
             id = R.id.subsTextView
             text = SpannedString("")
-            textSize = 20F
+            textSize = applicationContext.resources.getDimension(R.dimen._6ssp)
             setTextColor(Color.WHITE)
             setShadowLayer(3F, 3F, 3F, Color.BLACK)
             setPadding(1, 1, 5, 5)
@@ -69,7 +69,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
 
         mSubtitleLayoutParams = LayoutParams()
         mSubtitleLayoutParams.apply {
-            y = Utils.dpToPixels(50F).toInt()
+            y = applicationContext.resources.getDimension(R.dimen._40sdp).toInt()
             height = LayoutParams.WRAP_CONTENT
             width = LayoutParams.MATCH_PARENT
             type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
@@ -143,9 +143,9 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         mSubtitleTextView.getLocationOnScreen(coords)
 
         layoutParams.apply {
-            y = coords[1] - Utils.dpToPixels(50F).toInt()
-            width = Utils.dpToPixels(300F).toInt()
-            height = Utils.dpToPixels(50F).toInt()
+            y = coords[1] - applicationContext.resources.getDimension(R.dimen._40sdp).toInt()
+            width = applicationContext.resources.getDimension(R.dimen._250sdp).toInt()
+            height = applicationContext.resources.getDimension(R.dimen._40sdp).toInt()
             type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
             format = PixelFormat.TRANSPARENT
             gravity = Gravity.CENTER_HORIZONTAL or Gravity.TOP
@@ -279,7 +279,9 @@ class SubtitleManager(private val applicationContext: Context, private val windo
         mTokenizer = Tokenizer()
 
         try {
-            windowManager.addView(mSubtitleLayout, mSubtitleLayoutParams)
+            if (!mSubtitleLayout.isAttachedToWindow) {
+                windowManager.addView(mSubtitleLayout, mSubtitleLayoutParams)
+            }
         }
         catch (ex: Exception) {
             Log.e("SUBSOVERLAY", "adding subs view failed", ex)
@@ -287,7 +289,10 @@ class SubtitleManager(private val applicationContext: Context, private val windo
     }
 
     fun closeAll() {
-        windowManager.removeView(mSubtitleLayout)
+        if (mSubtitleLayout.isAttachedToWindow) {
+            windowManager.removeView(mSubtitleLayout)
+        }
+
         if (mSubtitleAdjustLayout != null) {
             windowManager.removeView(mSubtitleAdjustLayout)
             mSubtitleAdjustLayout = null

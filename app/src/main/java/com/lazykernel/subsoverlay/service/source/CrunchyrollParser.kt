@@ -1,9 +1,9 @@
 package com.lazykernel.subsoverlay.service.source
 
+import android.accessibilityservice.AccessibilityService
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import android.view.accessibility.AccessibilityEvent.TYPE_VIEW_CLICKED
-import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+import android.view.accessibility.AccessibilityEvent.*
 import kotlin.math.pow
 
 /*
@@ -16,6 +16,7 @@ For episode:
 I/SUBSOVERLAY: event: EventType: TYPE_VIEW_CLICKED; EventTime: 918269; PackageName: com.crunchyroll.crunchyroid; MovementGranularity: 0; Action: 0; ContentChangeTypes: []; WindowChangeTypes: [] [ ClassName: android.view.ViewGroup; Text: [S1 E1 - The Strongest Maid in History, Tohru! (Well, She is a Dragon), 23m]; ContentDescription: null; ItemCount: -1; CurrentItemIndex: -1; Enabled: true; Password: false; Checked: false; FullScreen: false; Scrollable: false; BeforeText: null; FromIndex: -1; ToIndex: -1; ScrollX: 0; ScrollY: 0; MaxScrollX: 0; MaxScrollY: 0; ScrollDeltaX: -1; ScrollDeltaY: -1; AddedCount: -1; RemovedCount: -1; ParcelableData: null ]; recordCount: 0
  */
 class CrunchyrollParser : IDataParser() {
+    override val packageName: String = "com.crunchyroll.crunchyroid"
     override val includedIds: List<String>
         get() = listOf(
                 "com.crunchyroll.crunchyroid:id/current_time"
@@ -31,13 +32,23 @@ class CrunchyrollParser : IDataParser() {
     override var isInMediaPlayer: Boolean = true
     override var isInMediaPlayerChanged: Boolean = false
 
-    override fun updateState(event: AccessibilityEvent?) {
-        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
-                && event.packageName != "com.crunchyroll.crunchyroid"
-                && event.packageName != "com.lazykernel.subsoverlay"
-                && event.contentChangeTypes != AccessibilityEvent.CONTENT_CHANGE_TYPE_PANE_DISAPPEARED) {
-            // Assuming crunchyroll window has been closed
-            isPaused = true
+    private val exitActivityClassNames = listOf(
+            "com.ellation.crunchyroll.presentation.main.simulcast.SimulcastBottomBarActivity",
+            "com.ellation.crunchyroll.presentation.main.browse.BrowseBottomBarActivity",
+            "com.ellation.crunchyroll.presentation.main.home.HomeBottomBarActivity",
+            "com.ellation.crunchyroll.presentation.main.settings.SettingsBottomBarActivity",
+            "com.ellation.crunchyroll.presentation.main.lists.MyListsBottomBarActivity",
+            "com.ellation.crunchyroll.presentation.showpage.ShowPageActivity"
+    )
+
+    override fun updateState(event: AccessibilityEvent?, service: AccessibilityService) {
+        // Return instantly if just closed
+        if (!checkApplicationOpen(event, service)) {
+            return
+        }
+
+        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && exitActivityClassNames.any { event.className == it }) {
+            // Assuming player closed
             if (isInMediaPlayer) {
                 isInMediaPlayer = false
                 isInMediaPlayerChanged = true
@@ -45,7 +56,7 @@ class CrunchyrollParser : IDataParser() {
             return
         }
 
-        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && event.className == "com.ellation.crunchyroll.presentation.content.WatchPageActivity") {
+        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED && event.className == "com.ellation.crunchyroll.presentation.content.WatchPageActivity") {
             // Assuming player entered
             if (!isInMediaPlayer) {
                 isInMediaPlayer = true

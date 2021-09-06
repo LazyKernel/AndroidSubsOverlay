@@ -9,8 +9,8 @@ class SubtitleTimingTask(private val mDataParser: IDataParser, private val mSubt
     // Might not last over invocations / timer triggers
     var mLastTimestamp: Long = 0
     var mCurrentTimerInSeconds: Double = 0.0
-    // Default offset of 500ms
-    var mOffsetInMilliseconds: Int = 500
+    // Default offset of 0ms
+    var mOffsetInMilliseconds: Int = 0
 
     // TODO: Stop when service is destroyed, only run when in netflix media player view
     override fun run() {

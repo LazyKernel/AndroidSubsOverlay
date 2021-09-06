@@ -5,8 +5,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:layout_marginVertical="7dp"
-    android:layout_marginHorizontal="7dp">
+    android:layout_marginVertical="@dimen/_5sdp"
+    android:layout_marginHorizontal="@dimen/_5sdp">
 
     <se.fekete.furiganatextview.furiganaview.FuriganaTextView
         android:id="@+id/dict_slug"
@@ -15,7 +15,8 @@
         android:text="&lt;ruby&gt;例え&lt;rt&gt;たとえ&lt;/rt&gt;&lt;/ruby&gt;"
         android:textAppearance="@style/TextAppearance.AppCompat.Title"
         app:contains_ruby_tags="true"
-        android:layout_marginStart="7dp" />
+        android:textSize="@dimen/_20ssp"
+        android:layout_marginStart="@dimen/_5sdp" />
 
     <!-- Room for other tags next to slug -->
 
@@ -24,7 +25,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginVertical="7dp">
+        android:layout_marginVertical="@dimen/_5sdp">
 
     </LinearLayout>
 
@@ -33,7 +34,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_marginVertical="7dp">
+        android:layout_marginVertical="@dimen/_5sdp">
 
     </androidx.recyclerview.widget.RecyclerView>
 

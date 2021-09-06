@@ -1,5 +1,6 @@
 package com.lazykernel.subsoverlay.service.source
 
+import android.accessibilityservice.AccessibilityService
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.*
 import android.view.accessibility.AccessibilityNodeInfo
@@ -16,6 +17,7 @@ class NetflixParser : IDataParser() {
     // Pause button: com.netflix.mediaclient:id/player_pause_btn
     // Subtitles container: com.netflix.mediaclient:id/player_subtitles_container
 
+    override val packageName: String = "com.netflix.mediaclient"
     override val includedIds: List<String>
         get() = listOf(
                 "com.netflix.mediaclient:id/player_title_label",
@@ -33,17 +35,8 @@ class NetflixParser : IDataParser() {
 
     private var totalLength: Int? = null
 
-    override fun updateState(event: AccessibilityEvent?) {
-        if (event?.eventType == TYPE_WINDOW_STATE_CHANGED
-                && event.packageName != "com.netflix.mediaclient"
-                && event.packageName != "com.lazykernel.subsoverlay"
-                && event.contentChangeTypes != CONTENT_CHANGE_TYPE_PANE_DISAPPEARED) {
-            // Assuming netflix window has been closed
-            isPaused = true
-            if (isInMediaPlayer) {
-                isInMediaPlayer = false
-                isInMediaPlayerChanged = true
-            }
+    override fun updateState(event: AccessibilityEvent?, service: AccessibilityService) {
+        if (!checkApplicationOpen(event, service)) {
             return
         }
 
@@ -60,7 +53,7 @@ class NetflixParser : IDataParser() {
         // TYPE_WINDOW_STATE_CHANGED with className com.netflix.mediaclient.ui.player.PlayerActivity
         // which, again, very conveniently also gives us unpausing for free.
         // Forgive me Father, for I have sinned...
-        if (event?.eventType == TYPE_WINDOW_CONTENT_CHANGED && event.className == "androidx.recyclerview.widget.RecyclerView") {
+        if (event?.eventType == TYPE_WINDOW_CONTENT_CHANGED && event.packageName == packageName && event.className == "androidx.recyclerview.widget.RecyclerView") {
             // Assuming netflix media player window has been closed or episodes view has been entered
             isPaused = true
             if (isInMediaPlayer) {
