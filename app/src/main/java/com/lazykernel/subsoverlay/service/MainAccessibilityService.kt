@@ -47,7 +47,8 @@ class MainAccessibilityService : AccessibilityService() {
     private var mServiceRunning: Boolean = false
     private val mTimer = Timer()
     lateinit var mSubtitleTimingTask: SubtitleTimingTask
-    private val mDataParser = CrunchyrollParser()
+    private var mDataParser: IDataParser = CrunchyrollParser()
+    private val mAvailableParsers = mapOf("com.netflix.mediaclient" to NetflixParser::class.java, "com.crunchyroll.crunchyroid" to CrunchyrollParser::class.java)
     private val mMainThreadHandler: Handler = Handler(Looper.getMainLooper())
     private var mSelectedFile: String? = null
 
@@ -120,6 +121,15 @@ class MainAccessibilityService : AccessibilityService() {
 
         if (event == null) {
             return
+        }
+
+        if (event.eventType == TYPE_WINDOWS_CHANGED) {
+            val packageOpen = mAvailableParsers.keys.find { IDataParser.isPackageWindowOpen(it, this) }
+            // Is one of our target windows open and different from the current parser
+            if (packageOpen != null && packageOpen != mDataParser.packageName) {
+                mDataParser = mAvailableParsers[packageOpen]!!.newInstance()
+                mSubtitleTimingTask.mDataParser = mDataParser
+            }
         }
 
         mDataParser.updateState(event, this)

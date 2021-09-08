@@ -1,5 +1,6 @@
 package com.lazykernel.subsoverlay.service.dictionary
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.service.dictionary.data.DictionaryTermEntry
 import se.fekete.furiganatextview.furiganaview.FuriganaTextView
+import kotlin.math.exp
 
 class DictionarySlugEntry(private val entries: Map<String, List<DictionaryTermEntry>>, private val entriesOrder: List<String>) : RecyclerView.Adapter<DictionarySlugEntry.ViewHolder>() {
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -35,7 +37,11 @@ class DictionarySlugEntry(private val entries: Map<String, List<DictionaryTermEn
         val list = entries[key] ?: return
 
         val reading = list.find { v -> v.reading != null && v.reading.isNotBlank() }?.reading ?: ""
-        holder.slugView.setFuriganaText(parseReading(key, reading), true)
+        val parsedReading = parseReading(key, reading)
+        // Extremely dumb hack to get furigana text view to overflow furigana to right instead of
+        // to the left and out of view
+        Log.d("SUBSOVERLAY", parsedReading)
+        holder.slugView.setFuriganaText("$parsedReading <ruby><rt> </rt></ruby>", true)
 
         holder.glossaryLayout.adapter = DictionaryEntryAdapter(list)
     }
@@ -57,12 +63,15 @@ class DictionarySlugEntry(private val entries: Map<String, List<DictionaryTermEn
             return expression
         }
 
+        Log.d("SUBSOVERLAY", "exp: $expression read: $reading")
         // Check if expression actually contains any kanji
         if (expression.any { c -> Character.UnicodeBlock.of(c.toInt()) == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS }) {
             // First reading is usually the slug, although for some entries, the slug is just a
             // token string
             val wordParts: ArrayList<Pair<String, String>> = arrayListOf()
             val matches = kanaPattern.findAll(expression)
+            var totalExpression = 0
+            var totalReading = 0
             // Simple replace if the word contains no kana
             if (matches.count() == 0) {
                 wordParts.add(Pair(expression, reading))
@@ -77,6 +86,8 @@ class DictionarySlugEntry(private val entries: Map<String, List<DictionaryTermEn
                         maskPattern = match.value
                         wordParts.add(Pair(match.value, match.value))
                         lastEnd = match.range.last + 1
+                        totalExpression += match.value.length
+                        totalReading += match.value.length
                     }
                     else {
                         // we want greedy searching
@@ -84,6 +95,8 @@ class DictionarySlugEntry(private val entries: Map<String, List<DictionaryTermEn
                         wordParts.add(Pair(expression.substring(lastEnd, match.range.first), ""))
                         wordParts.add(Pair(match.value, match.value))
                         lastEnd = match.range.last + 1
+                        totalExpression += match.value.length
+                        totalReading += match.value.length
                     }
                 }
 
@@ -94,7 +107,6 @@ class DictionarySlugEntry(private val entries: Map<String, List<DictionaryTermEn
                     maskMatch.groupValues.forEachIndexed { idx, match ->
                         // skip first element, which is the entire string
                         if (idx > 0) {
-                            println(match)
                             while (i < wordParts.size && wordParts[i].second.isNotEmpty()) {
                                 i++
                             }
@@ -102,8 +114,24 @@ class DictionarySlugEntry(private val entries: Map<String, List<DictionaryTermEn
                             if (i >= wordParts.size)
                                 return@forEachIndexed
 
+                            totalExpression += wordParts[i].first.length
+                            totalReading += match.length
                             wordParts[i] = Pair(wordParts[i].first, match)
                         }
+                    }
+                    // Check for trailing characters
+                    if (totalExpression < expression.length && totalReading < reading.length) {
+                        val trailingExpression = expression.substring(totalExpression)
+                        val trailingReading = reading.substring(totalReading)
+                        wordParts.add(Pair(trailingExpression, trailingReading))
+                    }
+                    else if (totalExpression < expression.length) {
+                        val trailing = expression.substring(totalExpression)
+                        wordParts.add(Pair(trailing, trailing))
+                    }
+                    else if (totalReading < reading.length) {
+                        val trailing = reading.substring(totalReading)
+                        wordParts.add(Pair(trailing, trailing))
                     }
                 }
                 else {

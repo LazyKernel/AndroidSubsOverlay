@@ -5,7 +5,7 @@ import android.util.Log
 import com.lazykernel.subsoverlay.service.source.IDataParser
 import java.util.*
 
-class SubtitleTimingTask(private val mDataParser: IDataParser, private val mSubtitleManager: SubtitleManager, private val mHandler: Handler) : TimerTask() {
+class SubtitleTimingTask(@Volatile var mDataParser: IDataParser, private val mSubtitleManager: SubtitleManager, private val mHandler: Handler) : TimerTask() {
     // Might not last over invocations / timer triggers
     var mLastTimestamp: Long = 0
     var mCurrentTimerInSeconds: Double = 0.0

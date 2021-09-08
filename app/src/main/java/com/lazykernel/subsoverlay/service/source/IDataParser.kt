@@ -1,6 +1,7 @@
 package com.lazykernel.subsoverlay.service.source
 
 import android.accessibilityservice.AccessibilityService
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import kotlin.math.abs
@@ -28,10 +29,6 @@ abstract class IDataParser {
         return AccessibilityNodeIterator(node)
     }
 
-    fun isPackageWindowOpen(packageName: String, service: AccessibilityService): Boolean {
-        return service.windows.any { it.root != null && it.root.packageName == packageName }
-    }
-
     /*
     Returns false if just closed (or other window closed and the target package's window not open), true otherwise
      */
@@ -56,5 +53,11 @@ abstract class IDataParser {
             }
         }
         return true
+    }
+
+    companion object {
+        fun isPackageWindowOpen(packageName: String, service: AccessibilityService): Boolean {
+            return service.windows.any { it?.root?.packageName == packageName }
+        }
     }
 }

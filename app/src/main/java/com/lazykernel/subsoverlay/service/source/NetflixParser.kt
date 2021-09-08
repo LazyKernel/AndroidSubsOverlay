@@ -55,8 +55,8 @@ class NetflixParser : IDataParser() {
         // Forgive me Father, for I have sinned...
         if (event?.eventType == TYPE_WINDOW_CONTENT_CHANGED && event.packageName == packageName && event.className == "androidx.recyclerview.widget.RecyclerView") {
             // Assuming netflix media player window has been closed or episodes view has been entered
-            isPaused = true
             if (isInMediaPlayer) {
+                isPaused = true
                 isInMediaPlayer = false
                 isInMediaPlayerChanged = true
             }
@@ -68,8 +68,8 @@ class NetflixParser : IDataParser() {
             if (!isInMediaPlayer) {
                 isInMediaPlayer = true
                 isInMediaPlayerChanged = true
+                isPaused = false
             }
-            isPaused = false
         }
 
         if (event?.eventType == TYPE_VIEW_CLICKED && event.source?.viewIdResourceName == "com.netflix.mediaclient:id/player_pause_btn") {

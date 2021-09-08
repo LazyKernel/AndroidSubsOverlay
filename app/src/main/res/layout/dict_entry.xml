@@ -12,7 +12,7 @@
         android:id="@+id/dict_slug"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="&lt;ruby&gt;例え&lt;rt&gt;たとえ&lt;/rt&gt;&lt;/ruby&gt;"
+        android:text="&lt;ruby&gt;例&lt;rt&gt;たと&lt;/rt&gt;&lt;/ruby&gt;え&lt;ruby&gt;&lt;rt&gt; &lt;/rt&gt;&lt;/ruby&gt;"
         android:textAppearance="@style/TextAppearance.AppCompat.Title"
         app:contains_ruby_tags="true"
         android:textSize="@dimen/_20ssp"

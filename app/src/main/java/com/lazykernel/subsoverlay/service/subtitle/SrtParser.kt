@@ -45,6 +45,7 @@ class SrtParser(context: Context) : ISubtitleParser(context) {
     }
 
     override fun parseSubtitlesFromUri(fileUri: Uri) {
+        subtitleLines.clear()
         val rows = getFileRows(fileUri)
         var parsingState = ParsingState.COUNTER_LINE
         lateinit var currentSubtitle: Subtitle
