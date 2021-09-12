@@ -2,15 +2,20 @@ package com.lazykernel.subsoverlay.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ServiceInfo
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.media.*
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import androidx.preference.PreferenceManager
 import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent.ACTION_UP
@@ -19,12 +24,11 @@ import android.view.WindowManager
 import android.view.WindowManager.LayoutParams
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityEvent.TYPE_WINDOWS_CHANGED
-import android.view.accessibility.AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
 import android.widget.*
-import androidx.annotation.RequiresApi
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.widget.doOnTextChanged
+import androidx.preference.PreferenceManager
+import com.lazykernel.subsoverlay.AudioCaptureService
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.application.DummyActivity
 import com.lazykernel.subsoverlay.service.source.CrunchyrollParser
@@ -34,7 +38,6 @@ import com.lazykernel.subsoverlay.service.subtitle.SubtitleManager
 import com.lazykernel.subsoverlay.service.subtitle.SubtitleTimingTask
 import com.lazykernel.subsoverlay.utils.Utils
 import java.util.*
-import java.util.concurrent.ScheduledThreadPoolExecutor
 
 
 class MainAccessibilityService : AccessibilityService() {
@@ -241,6 +244,22 @@ class MainAccessibilityService : AccessibilityService() {
             true
         }
 
+        mSettingsModalLayout.findViewById<Button>(R.id.temp_start_record_btn).setOnTouchListener { view, event ->
+            if (event.action == ACTION_UP) {
+                tempStartRecording()
+            }
+            true
+        }
+
+        mSettingsModalLayout.findViewById<Button>(R.id.temp_stop_btn).setOnTouchListener { view, event ->
+            if (event.action == ACTION_UP) {
+                tempStopRecording()
+            }
+            true
+        }
+
+        mSettingsModalLayout
+
         try {
             windowManager.addView(mSettingsModalLayout, layoutParams)
         }
@@ -250,7 +269,7 @@ class MainAccessibilityService : AccessibilityService() {
     }
 
     private val mSubListener = object : DummyActivity.ResultListener() {
-        override fun onSuccess(data: Intent?) {
+        override fun onSuccess(type: DummyActivity.Actions, data: Intent?) {
             Log.i("SUBSOVERLAY", "Loaded $data")
             if (data?.data != null) {
                 mSubtitleManager.loadSubtitlesFromUri(data.data!!)
@@ -262,7 +281,7 @@ class MainAccessibilityService : AccessibilityService() {
             openSettingsModal()
         }
 
-        override fun onFailure(data: Intent?) {
+        override fun onFailure(type: DummyActivity.Actions, data: Intent?) {
             Log.i("SUBSOVERLAY", "Sub file selecting cancelled")
             openSettingsModal()
         }
@@ -314,5 +333,43 @@ class MainAccessibilityService : AccessibilityService() {
             windowManager.removeView(mSettingsLayout)
         }
         mSubtitleManager.closeAll()
+    }
+
+    private val mProjectionListener = object : DummyActivity.ResultListener() {
+        override fun onSuccess(type: DummyActivity.Actions, data: Intent?) {
+            Log.i("SUBSOVERLAY", "Loaded $data")
+            if (data != null) {
+                val intent = Intent(this@MainAccessibilityService, AudioCaptureService::class.java)
+                intent.action = AudioCaptureService.Action.ACTION_START.name
+                intent.putExtras(data)
+                startService(intent)
+            }
+        }
+
+        override fun onFailure(type: DummyActivity.Actions, data: Intent?) {
+            Log.i("SUBSOVERLAY", "Sub file selecting cancelled")
+        }
+    }
+
+    private fun tempStartRecording() {
+        DummyActivity.mResultListener = mProjectionListener
+
+        val bundle = Bundle()
+        bundle.putInt("action", DummyActivity.Actions.ACTION_MEDIA_PROJECTION.ordinal)
+
+        val intent = Intent()
+        intent.apply {
+            setClass(this@MainAccessibilityService, DummyActivity::class.java)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtras(bundle)
+        }
+        startActivity(intent)
+        closeSettingsModal()
+    }
+
+    private fun tempStopRecording() {
+        val intent = Intent(this@MainAccessibilityService, AudioCaptureService::class.java)
+        intent.action = AudioCaptureService.Action.ACTION_STOP.name
+        startService(intent)
     }
 }

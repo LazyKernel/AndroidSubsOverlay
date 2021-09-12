@@ -1,6 +1,8 @@
 package com.lazykernel.subsoverlay.application
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
@@ -10,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.lazykernel.subsoverlay.R
 import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import com.lazykernel.subsoverlay.service.dictionary.DictionaryManager
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +64,14 @@ class SettingsActivity : AppCompatActivity() {
 
         lifecycleScope.launch(Dispatchers.IO) {
             buildListView()
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(
+                    Manifest.permission.RECORD_AUDIO
+            ),0)
+            return
         }
     }
 

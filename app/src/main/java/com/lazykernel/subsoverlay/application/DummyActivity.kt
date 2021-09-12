@@ -1,11 +1,11 @@
 package com.lazykernel.subsoverlay.application
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.media.projection.MediaProjectionManager
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.util.Log
-import androidx.fragment.app.FragmentActivity
 
 class DummyActivity : Activity() {
     /*
@@ -14,14 +14,16 @@ class DummyActivity : Activity() {
     "shouldClose": (bool) if true, closes activity after done (default true)
      */
     enum class Actions {
-        ACTION_PICK_SUB_FILE
+        ACTION_PICK_SUB_FILE,
+        ACTION_MEDIA_PROJECTION
     }
 
     val PICK_SUB_FILE_CODE = 1001
+    val MEDIA_PROJECTION_CODE = 1002
 
     abstract class ResultListener {
-        abstract fun onSuccess(data: Intent?)
-        abstract fun onFailure(data: Intent?)
+        abstract fun onSuccess(type: Actions, data: Intent?)
+        abstract fun onFailure(type: Actions, data: Intent?)
     }
 
     companion object {
@@ -33,6 +35,7 @@ class DummyActivity : Activity() {
         Log.i("SUBSDUMMYACTION", "bundle $intent")
         when (intent.getIntExtra("action", -1)) {
             Actions.ACTION_PICK_SUB_FILE.ordinal -> pickSubFile()
+            Actions.ACTION_MEDIA_PROJECTION.ordinal -> mediaProjection()
         }
     }
 
@@ -41,10 +44,23 @@ class DummyActivity : Activity() {
         Log.i("SUBSDUMMYACTION", "intent data $data")
         if (requestCode == PICK_SUB_FILE_CODE) {
             if (resultCode == RESULT_OK) {
-                mResultListener?.onSuccess(data)
+                mResultListener?.onSuccess(Actions.ACTION_PICK_SUB_FILE, data)
             }
             else if (resultCode == RESULT_CANCELED) {
-                mResultListener?.onFailure(data)
+                mResultListener?.onFailure(Actions.ACTION_PICK_SUB_FILE, data)
+            }
+            mResultListener = null
+
+            if (intent.getBooleanExtra("shouldClose", true)) {
+                finish()
+            }
+        }
+        else if (requestCode == MEDIA_PROJECTION_CODE) {
+            if (resultCode == RESULT_OK) {
+                mResultListener?.onSuccess(Actions.ACTION_MEDIA_PROJECTION, data)
+            }
+            else if (resultCode == RESULT_CANCELED) {
+                mResultListener?.onFailure(Actions.ACTION_MEDIA_PROJECTION, data)
             }
             mResultListener = null
 
@@ -62,5 +78,10 @@ class DummyActivity : Activity() {
             putExtras(intent)
         }
         startActivityForResult(Intent.createChooser(fileOpenIntent, "Select a sub file"), PICK_SUB_FILE_CODE)
+    }
+
+    private fun mediaProjection() {
+        val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        startActivityForResult(projectionManager.createScreenCaptureIntent(), MEDIA_PROJECTION_CODE)
     }
 }
