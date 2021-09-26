@@ -11,8 +11,8 @@ android {
         applicationId "com.lazykernel.subsoverlay"
         minSdkVersion 22
         targetSdkVersion 31
-        versionCode 7
-        versionName "1.0.6-alpha"
+        versionCode 8
+        versionName "1.0.7-alpha"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

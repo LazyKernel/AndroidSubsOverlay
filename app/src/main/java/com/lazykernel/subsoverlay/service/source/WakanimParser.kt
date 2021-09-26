@@ -53,6 +53,7 @@ class WakanimParser : IDataParser() {
             if (isInMediaPlayer) {
                 isInMediaPlayer = false
                 isInMediaPlayerChanged = true
+                isPaused = true
             }
             return
         }
@@ -62,14 +63,19 @@ class WakanimParser : IDataParser() {
             if (!isInMediaPlayer) {
                 isInMediaPlayer = true
                 isInMediaPlayerChanged = true
+                isPaused = false
             }
         }
 
         if (event?.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED && event.className == "android.widget.ImageButton") {
             // Pause button was clicked, set paused state
             if (event.text.toString() == "[Pause]") {
-                // toggle paused state
-                isPaused = !isPaused
+                // paused
+                isPaused = true
+            }
+            else if (event.text.toString() == "[Play]") {
+                // unpaused
+                isPaused = false
             }
         }
 

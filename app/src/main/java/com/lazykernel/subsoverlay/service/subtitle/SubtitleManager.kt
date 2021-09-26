@@ -69,7 +69,7 @@ class SubtitleManager(private val applicationContext: Context, private val windo
 
         mSubtitleLayoutParams = LayoutParams()
         mSubtitleLayoutParams.apply {
-            y = applicationContext.resources.getDimension(R.dimen._40sdp).toInt()
+            y = applicationContext.resources.getDimension(R.dimen._60sdp).toInt()
             height = LayoutParams.WRAP_CONTENT
             width = LayoutParams.MATCH_PARENT
             type = LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
