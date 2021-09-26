@@ -1,18 +1,18 @@
 package com.lazykernel.subsoverlay
 
+import android.Manifest
 import android.app.*
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.graphics.Color
-import android.media.AudioAttributes
-import android.media.AudioFormat
-import android.media.AudioPlaybackCaptureConfiguration
-import android.media.AudioRecord
+import android.media.*
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import androidx.core.app.ActivityCompat
 
 // Seems to work for Crunchyroll but not for Netflix
 class AudioCaptureService : Service() {
@@ -88,6 +88,8 @@ class AudioCaptureService : Service() {
         mMediaProjection.registerCallback(mProjectionCallback, null)
         val config = AudioPlaybackCaptureConfiguration.Builder(mMediaProjection)
                 .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+                .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+                .addMatchingUsage(AudioAttributes.USAGE_GAME)
                 .build()
 
         val audioFormat = AudioFormat.Builder()
