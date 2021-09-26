@@ -44,7 +44,7 @@ abstract class IDataParser {
             }
         }
         else {
-            if (event?.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED && !isPackageWindowOpen("com.crunchyroll.crunchyroid", service)) {
+            if (event?.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED && !isPackageWindowOpen(packageName, service)) {
                 if (isInMediaPlayer) {
                     isInMediaPlayer = false
                     isInMediaPlayerChanged = true

@@ -30,6 +30,7 @@ import com.lazykernel.subsoverlay.application.DummyActivity
 import com.lazykernel.subsoverlay.service.source.CrunchyrollParser
 import com.lazykernel.subsoverlay.service.source.IDataParser
 import com.lazykernel.subsoverlay.service.source.NetflixParser
+import com.lazykernel.subsoverlay.service.source.WakanimParser
 import com.lazykernel.subsoverlay.service.subtitle.SubtitleManager
 import com.lazykernel.subsoverlay.service.subtitle.SubtitleTimingTask
 import com.lazykernel.subsoverlay.utils.Utils
@@ -38,6 +39,13 @@ import java.util.concurrent.ScheduledThreadPoolExecutor
 
 
 class MainAccessibilityService : AccessibilityService() {
+
+    // If adding parsers for more services, add the mappings for them here
+    private val mAvailableParsers = mapOf(
+            "com.netflix.mediaclient" to NetflixParser::class.java,
+            "com.crunchyroll.crunchyroid" to CrunchyrollParser::class.java,
+            "wakanimapp.wakanimapp" to WakanimParser::class.java
+    )
 
     var mSettingsModalOpen: Boolean = false
     lateinit var mSettingsModalLayout: ConstraintLayout
@@ -48,7 +56,6 @@ class MainAccessibilityService : AccessibilityService() {
     private val mTimer = Timer()
     lateinit var mSubtitleTimingTask: SubtitleTimingTask
     private var mDataParser: IDataParser = CrunchyrollParser()
-    private val mAvailableParsers = mapOf("com.netflix.mediaclient" to NetflixParser::class.java, "com.crunchyroll.crunchyroid" to CrunchyrollParser::class.java)
     private val mMainThreadHandler: Handler = Handler(Looper.getMainLooper())
     private var mSelectedFile: String? = null
 
