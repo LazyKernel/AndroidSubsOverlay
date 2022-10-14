@@ -17,4 +17,6 @@
     <string name="no_results">No results</string>
     <string name="loading_dict">Loading dictionary…</string>
     <string name="deleting_dict">Deleting dictionary…</string>
+    <string name="default_notification_channel_name">SUBSOVERLAY_DEFAULT_NOTIF_CHANNEL</string>
+    <string name="default_notification_channel_desc">Default persistent notification channel for SubsOverlay</string>
 </resources>

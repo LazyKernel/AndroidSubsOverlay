@@ -2,6 +2,10 @@ package com.lazykernel.subsoverlay.service
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
@@ -24,6 +28,8 @@ import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.widget.doOnTextChanged
 import com.lazykernel.subsoverlay.R
 import com.lazykernel.subsoverlay.application.DummyActivity
@@ -46,6 +52,9 @@ class MainAccessibilityService : AccessibilityService() {
             "com.crunchyroll.crunchyroid" to CrunchyrollParser::class.java,
             "wakanimapp.wakanimapp" to WakanimParser::class.java
     )
+
+    private val mDefaultNotifChannelId = "SUBSOVERLAY_DEFAULT_NOTIF_CHANNEL"
+    private val mPersistentNotificationId = 1
 
     var mSettingsModalOpen: Boolean = false
     lateinit var mSettingsModalLayout: ConstraintLayout
@@ -76,6 +85,8 @@ class MainAccessibilityService : AccessibilityService() {
             notificationTimeout = 0
         }
 
+        createNotificationChannel()
+
         val preferences = PreferenceManager.getDefaultSharedPreferences(applicationContext)
         preferences.registerOnSharedPreferenceChangeListener(mPreferenceChangeListener)
 
@@ -96,6 +107,7 @@ class MainAccessibilityService : AccessibilityService() {
             mTimer.scheduleAtFixedRate(mSubtitleTimingTask, 0, 500)
             mSubtitleTimingTask.mOffsetInMilliseconds = preferences.getInt("subtitleOffset", 0)
             mServiceRunning = true
+            buildPersistentNotification()
         }
     }
 
@@ -112,11 +124,13 @@ class MainAccessibilityService : AccessibilityService() {
                     val preferences = PreferenceManager.getDefaultSharedPreferences(this@MainAccessibilityService)
                     mSubtitleTimingTask.mOffsetInMilliseconds = preferences.getInt("subtitleOffset", 0)
                     mServiceRunning = true
+                    buildPersistentNotification()
                 }
                 else {
                     closeAll()
                     mSubtitleTimingTask.cancel()
                     mServiceRunning = false
+                    removePersistentNotification()
                 }
             }
         }
@@ -154,6 +168,43 @@ class MainAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {
         Log.i("SUBSOVERLAY", "interrupt")
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = getString(R.string.default_notification_channel_name)
+            val descriptionText = getString(R.string.default_notification_channel_desc)
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val channel = NotificationChannel(mDefaultNotifChannelId, name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun buildPersistentNotification() {
+        val stopIntent = Intent(this, NotifBroadcastReceiver::class.java).apply {
+            action = "com.lazykernel.subsoverlay.STOP_BG_SERVICE"
+        }
+        val stopPendingIntent = PendingIntent.getBroadcast(this, 0, stopIntent, PendingIntent.FLAG_IMMUTABLE)
+        val builder = NotificationCompat.Builder(this, mDefaultNotifChannelId).apply {
+            setSmallIcon(R.drawable.ic_launcher_foreground)
+            setContentTitle("SubsOverlay")
+            setContentText("SubsOverlay background service is currently running.")
+            priority = NotificationCompat.PRIORITY_LOW
+            setOngoing(true)
+            addAction(R.drawable.ic_launcher_foreground, "STOP", stopPendingIntent)
+        }
+        with(NotificationManagerCompat.from(this)) {
+            notify(mPersistentNotificationId, builder.build())
+        }
+    }
+
+    private fun removePersistentNotification() {
+        with(NotificationManagerCompat.from(this)) {
+            cancel(mPersistentNotificationId)
+        }
     }
 
     fun buildSettingsButtonView(): Pair<LinearLayout, LayoutParams> {

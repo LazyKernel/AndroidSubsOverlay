@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "com.lazykernel.subsoverlay"
-        minSdkVersion 22
+        minSdkVersion 23
         targetSdkVersion 31
         versionCode 8
         versionName "1.0.7-alpha"
